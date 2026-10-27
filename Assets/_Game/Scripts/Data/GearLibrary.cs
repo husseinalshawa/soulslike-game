@@ -58,7 +58,7 @@ namespace SoulsGame.Data
             w.weaponName = "Twin Daggers";
             w.reach = 1.0f;
             w.hitboxWidth = 0.18f;
-            w.lightDamage = 12f; w.lightPoiseDamage = 6f; w.lightStaminaCost = 8f;
+            w.lightDamage = 16f; w.lightPoiseDamage = 6f; w.lightStaminaCost = 8f; // موازنة المرحلة 6: 12 كانت تتخلف في كل نزال
             w.light = new AttackTimeline(0.15f, 0.12f, 0.25f, 0.30f);
             w.heavyDamage = 30f; w.heavyPoiseDamage = 15f; w.heavyStaminaCost = 18f;
             w.heavy = new AttackTimeline(0.35f, 0.20f, 0.45f, 0.60f);

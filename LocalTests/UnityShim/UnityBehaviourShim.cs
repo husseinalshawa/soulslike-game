@@ -29,6 +29,7 @@ namespace UnityEngine
         public static float Max(float a, float b) => Math.Max(a, b);
         public static float Abs(float v) => Math.Abs(v);
         public static float Sign(float v) => v >= 0f ? 1f : -1f;
+        public static int CeilToInt(float v) => (int)Math.Ceiling(v);
         public static bool Approximately(float a, float b) => Math.Abs(a - b) < 1e-5f;
         public static float Sqrt(float v) => (float)Math.Sqrt(v);
         public static float Sin(float v) => (float)Math.Sin(v);

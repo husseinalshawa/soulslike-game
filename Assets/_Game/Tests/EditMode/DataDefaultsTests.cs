@@ -42,7 +42,7 @@ namespace SoulsGame.Tests
             Assert.AreEqual(40f, s.maxPoise);
             Assert.AreEqual(10f, s.poiseRegenPerSecond);
             Assert.AreEqual(25f, s.staminaRegenPerSecond);
-            Assert.AreEqual(1.0f, s.staminaRegenDelay);
+            Assert.AreEqual(0.5f, s.staminaRegenDelay, "موازنة المرحلة 6: مهلة أقصر تسمح بلعب نظيف مستدام");
             Assert.AreEqual(0.33f, s.blockingRegenMultiplier);
             Assert.AreEqual(2f, s.walkSpeed);
             Assert.AreEqual(5f, s.runSpeed);

@@ -13,7 +13,7 @@ namespace SoulsGame.Data
         public float poiseRegenPerSecond = 10f;
 
         public float staminaRegenPerSecond = 25f;
-        public float staminaRegenDelay = 1.0f;
+        public float staminaRegenDelay = 0.5f; // موازنة المرحلة 6: 1.0 كانت تخنق اللعب النظيف (التقرير)
         public float blockingRegenMultiplier = 0.33f;
 
         public float walkSpeed = 2f;
