@@ -102,15 +102,48 @@ namespace SoulsGame.Core
             return nearest;
         }
 
+        public const float HostileTalkRange = 10f;
+
+        // لا حوار والسيوف مشهورة: قفل الإدخال وسط مطاردة = موت بلا دفاع.
+        private bool AnyHostileEnemyNearby()
+        {
+            if (enemies == null)
+                return false;
+            foreach (var enemy in enemies)
+            {
+                if (enemy == null)
+                    continue;
+                var state = enemy.Brain.CurrentState;
+                if (state == EnemyStateId.Patrol || state == EnemyStateId.Returning ||
+                    state == EnemyStateId.Dead)
+                    continue;
+                if (Vector3.Distance(player.transform.position, enemy.transform.position)
+                    <= HostileTalkRange)
+                    return true;
+            }
+            return false;
+        }
+
         public void StartDialogue(NpcAvatar npc)
         {
             var stage = npc.Questline.ActiveStage(Story, player.KeyItems);
             if (stage == null)
                 return;
+            if (AnyHostileEnemyNearby())
+            {
+                toast?.Show("They will not speak while blades are drawn.");
+                return;
+            }
             player.InputLocked = true;
             EnemyAvatar.AggroSuppressed = true;
-            Dialogue.Begin(npc.Questline.NpcName, stage.Lines,
-                () => npc.Questline.CompleteStage(stage, Story, player.KeyItems, player.Wallet));
+            Dialogue.Begin(npc.Questline.NpcName, stage.Lines, () =>
+            {
+                bool hadAshes = player.KeyItems.Has(StoryLibrary.WardensAshes);
+                npc.Questline.CompleteStage(stage, Story, player.KeyItems, player.Wallet);
+                // قطعة قصة مُنحت في الحوار: الاسم والوصف المبهم يظهران كالالتقاط
+                if (!hadAshes && player.KeyItems.Has(StoryLibrary.WardensAshes))
+                    toast?.Show($"{StoryLibrary.WardensAshes} — {StoryLibrary.WardensAshesDescription}");
+            });
         }
 
         private void OnDialogueSessionChanged()

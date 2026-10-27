@@ -275,6 +275,13 @@ namespace SoulsGame.Player
             return true;
         }
 
+        // الماء يمسك ما يلتقطه: الركوب إلى داخل المستنقع = ترجّل إجباري.
+        public void EnforceMarshRules()
+        {
+            if (IsRiding && marsh != null && marsh.Contains(transform.position))
+                ForceDismount();
+        }
+
         public void ForceDismount()
         {
             if (!Mount.IsMounted && (horse == null || !horse.HasRider))
@@ -401,6 +408,7 @@ namespace SoulsGame.Player
             if (IsRiding && horse != null)
             {
                 horse.MoveInput = move; // راكباً: الإدخال يقود الحصان
+                EnforceMarshRules();
             }
             else
             {

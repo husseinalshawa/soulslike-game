@@ -261,6 +261,24 @@ namespace SoulsGame.World
             if (waterCollider != null) waterCollider.enabled = false;
             water.transform.SetParent(parent, true);
 
+            // المواصفة: مستوى «شفاف» — إعداد URP Unlit شفاف حيث يتوفر الشيدر
+            // (بيئة الاختبار ومشاريع بلا URP تبقى على اللون المصمت بأمان)
+            var waterRenderer = water.GetComponent<Renderer>();
+            var transparentShader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (waterRenderer != null && transparentShader != null)
+            {
+                var waterMaterial = new Material(transparentShader);
+                waterMaterial.SetFloat("_Surface", 1f); // Transparent
+                waterMaterial.SetOverrideTag("RenderType", "Transparent");
+                waterMaterial.SetFloat("_SrcBlend", 5f);  // SrcAlpha
+                waterMaterial.SetFloat("_DstBlend", 10f); // OneMinusSrcAlpha
+                waterMaterial.SetFloat("_ZWrite", 0f);
+                waterMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                waterMaterial.renderQueue = 3000;
+                waterMaterial.SetColor("_BaseColor", new Color(0.25f, 0.4f, 0.42f, 0.55f));
+                waterRenderer.material = waterMaterial;
+            }
+
             return new ChapelBuildResult { AltarPosition = altarPosition, WaterPlane = water };
         }
 

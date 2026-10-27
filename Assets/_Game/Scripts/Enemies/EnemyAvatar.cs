@@ -13,7 +13,8 @@ namespace SoulsGame.Enemies
         // مكبوح أثناء قائمة رفع المستوى: لا اكتشاف للاعب الجالس العاجز عن الرد
         public static bool AggroSuppressed;
 
-        private const float ChaseSpeed = 5f;
+        // سرعة المطاردة من إحصاءات النوع: جنود 5، المرتّلون الغارقون 2.5 (أبطأ وأقسى)
+        public float ChaseSpeed => stats != null ? stats.runSpeed : 5f;
         private const float PatrolSpeed = 1.5f;
         private const float TurnSpeedDegrees = 360f;
         private const float PatrolPointTolerance = 0.5f;

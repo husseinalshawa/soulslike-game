@@ -166,8 +166,9 @@ namespace SoulsGame.Core
             var parent = new GameObject("SunkenChapel");
             var chapel = WorldBuilder.BuildChapel(parent.transform, worldTheme);
 
-            // موقع الراحة الرابع (site 3) عند حافة المستنقع الجنوبية-الغربية
-            var chapelGrace = WorldBuilder.OnGround(95f, 55f, 1.1f);
+            // موقع الراحة الرابع (site 3) على أرض جافة قبالة المستنقع من الجنوب-الغرب
+            // (خارج الحوض ومنطقة دمجه ومربع سطح الماء — لا راحة غارقة)
+            var chapelGrace = WorldBuilder.OnGround(80f, 40f, 1.1f);
             Loop.Graces.AddSite(3, chapelGrace, discovered: false);
             Loop.graceMarkers = new[]
             {
@@ -280,16 +281,18 @@ namespace SoulsGame.Core
         private EnemyAvatar[] BuildChanters()
         {
             var tint = new Color(0.32f, 0.45f, 0.42f);
+            // مواقعهم داخل مستطيل أرضية الكنيسة الحجرية (سمكها 0.3) —
+            // الإزاحة 1.4 = 0.3 بلاطة + 1.1 نصف الجسم، كي لا يولدوا داخلها
             return new[]
             {
-                BuildEnemy(WorldBuilder.OnGround(112f, 70f, 1.1f),
-                    WorldBuilder.OnGround(110f, 68f, 1.1f), WorldBuilder.OnGround(114f, 72f, 1.1f),
+                BuildEnemy(WorldBuilder.OnGround(112f, 70f, 1.4f),
+                    WorldBuilder.OnGround(110f, 68f, 1.4f), WorldBuilder.OnGround(114f, 72f, 1.4f),
                     chanterStats, chanterWeapon, tint),
-                BuildEnemy(WorldBuilder.OnGround(128f, 72f, 1.1f),
-                    WorldBuilder.OnGround(126f, 70f, 1.1f), WorldBuilder.OnGround(130f, 74f, 1.1f),
+                BuildEnemy(WorldBuilder.OnGround(128f, 72f, 1.4f),
+                    WorldBuilder.OnGround(126f, 70f, 1.4f), WorldBuilder.OnGround(130f, 74f, 1.4f),
                     chanterStats, chanterWeapon, tint),
-                BuildEnemy(WorldBuilder.OnGround(120f, 94f, 1.1f),
-                    WorldBuilder.OnGround(118f, 93f, 1.1f), WorldBuilder.OnGround(122f, 95f, 1.1f),
+                BuildEnemy(WorldBuilder.OnGround(120f, 94f, 1.4f),
+                    WorldBuilder.OnGround(118f, 93f, 1.4f), WorldBuilder.OnGround(122f, 95f, 1.4f),
                     chanterStats, chanterWeapon, tint)
             };
         }
@@ -694,6 +697,9 @@ namespace SoulsGame.Core
             controller.height = 2f;
             controller.radius = 0.4f;
             controller.center = Vector3.zero;
+            // حافة أرضية الكنيسة 0.3م تساوي stepOffset الافتراضي بالضبط —
+            // قيمة صريحة أعلى تضمن الصعود (وإلا صار المذبح/الخاتمة بلا طريق)
+            controller.stepOffset = 0.5f;
 
             var damageable = go.AddComponent<Damageable>();
             damageable.stats = playerStats;
