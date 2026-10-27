@@ -89,7 +89,8 @@ namespace SoulsGame.Player
         private void WireDamageEvents()
         {
             // الصد يعترض الضربة قبل أن تمس الصحة؛ فشله = كسر حرس (يعالجه الـ Brain)
-            Damageable.DamageInterceptor = packet => Brain.NotifyBlockedHit(packet);
+            // — ولا اعتراض إطلاقاً على السرج (لا صد ولا i-frames راكباً)
+            Damageable.DamageInterceptor = packet => !IsRiding && Brain.NotifyBlockedHit(packet);
             Damageable.PoiseBroken += () => Brain.NotifyDamaged(poiseBroken: true);
             Damageable.Damaged += _ =>
             {
@@ -120,6 +121,7 @@ namespace SoulsGame.Player
             if (!Mount.TrySummon(transform.position, mountForbiddenZones, Brain.CurrentState, InputLocked))
                 return false;
 
+            Brain.SetBlockHeld(false); // لا صد على السرج — الركوب يسقط حالة الصد
             if (lockOn != null)
                 lockOn.Release(); // لا قفل على السرج
             motor.Frozen = true;
@@ -193,7 +195,7 @@ namespace SoulsGame.Player
             float dt = Time.deltaTime;
             Vector2 move = InputLocked ? Vector2.zero : Controls.Move.ReadValue<Vector2>();
 
-            bool wantsSprint = Controls.Sprint.IsPressed() && move.sqrMagnitude > 0.01f;
+            bool wantsSprint = !IsRiding && Controls.Sprint.IsPressed() && move.sqrMagnitude > 0.01f;
             isSprinting = wantsSprint && Stamina.Current > 0f &&
                           Brain.CurrentState == PlayerStateId.Locomotion;
 

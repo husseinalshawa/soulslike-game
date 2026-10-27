@@ -1,10 +1,12 @@
 using System;
 using SoulsGame.Player;
+using SoulsGame.World;
 using UnityEngine;
 
 namespace SoulsGame.Core
 {
-    // جدار الضباب: عبوره يبدأ معركة البوس ويقفل المدخل خلفك.
+    // جدار الضباب: عبوره يبدأ معركة البوس ويقفل المدخل خلفك —
+    // ماشياً أو راكباً (الحصان يُصرف إجبارياً: لا حصان في معركة البوس).
     public class FogGate : MonoBehaviour
     {
         public Action OnPlayerEntered;
@@ -16,8 +18,24 @@ namespace SoulsGame.Core
 
         private void OnTriggerEnter(Collider other)
         {
-            if (!armed || other.GetComponent<PlayerAvatar>() == null)
+            if (!armed)
                 return;
+
+            // راكباً: متحكم اللاعب معطّل — الحصان هو من يلمس المشغّل
+            var player = other.GetComponentInParent<PlayerAvatar>();
+            if (player == null)
+            {
+                var horse = other.GetComponentInParent<HorseAvatar>();
+                if (horse == null || !horse.HasRider)
+                    return;
+                player = horse.GetComponentInChildren<PlayerAvatar>();
+            }
+            if (player == null)
+                return;
+
+            if (player.IsRiding)
+                player.ForceDismount();
+
             armed = false;
             Seal(true);
             OnPlayerEntered?.Invoke();

@@ -105,6 +105,15 @@ namespace SoulsGame.Tests
             Assert.AreEqual(8, bootstrap.AllEnemies.Length,
                 "8 جنود: 2 حصن + 2×2 معسكران + 2 كهف");
 
+            // كل مواقع الراحة مواضع إحياء فوق الأرض لا داخلها (مركز اللاعب +1.1)
+            for (int i = 0; i < 3; i++)
+            {
+                Vector3 site = bootstrap.Loop.Graces.PositionOf(i);
+                Assert.GreaterOrEqual(site.y,
+                    World.WorldHeightmap.GetHeight(site.x, site.z) + 1.0f,
+                    $"موقع الإحياء {i} مرتفع عن التضاريس");
+            }
+
             Vector3 cachePos = bootstrap.Cache.transform.position;
             Assert.AreEqual(800, bootstrap.Cache.TryCollect(cachePos), "الكنز يمنح 800");
             Assert.AreEqual(0, bootstrap.Cache.TryCollect(cachePos), "مرة واحدة فقط");
@@ -118,6 +127,7 @@ namespace SoulsGame.Tests
             var player = bootstrap.Player;
 
             Assert.IsNotNull(bootstrap.Horse, "الحصان بُني");
+            Assert.IsFalse(bootstrap.Horse.gameObject.activeSelf, "مخفي حتى أول استدعاء");
             Assert.IsNotNull(player.Mount, "نظام الركوب تهيأ");
 
             // عند بوابة الحصن (داخل المنطقة المحظورة): الاستدعاء مرفوض
@@ -138,6 +148,17 @@ namespace SoulsGame.Tests
             Assert.IsTrue(player.TrySummonHorse());
             Assert.IsTrue(player.TrySummonHorse(), "الزر راكباً = ترجّل");
             Assert.IsFalse(player.IsRiding);
+
+            // الصد لا يحمي على السرج: استدعاء من حالة الصد ثم ضربة = ضرر كامل وترجّل
+            player.Brain.SetBlockHeld(true);
+            Assert.IsTrue(player.TrySummonHorse(), "الاستدعاء من الصد مسموح");
+            Assert.AreNotEqual(Player.PlayerStateId.Block, player.Brain.CurrentState,
+                "الركوب يسقط حالة الصد");
+            float hp2 = player.Damageable.Health.Current;
+            player.Damageable.ApplyDamage(new Combat.DamagePacket(20f, 20f, Vector3.zero));
+            Assert.AreEqual(hp2 - 20f, player.Damageable.Health.Current, 0.01f,
+                "لا امتصاص صد على السرج — الضرر كامل");
+            Assert.IsFalse(player.IsRiding, "وترجّل إجباري");
         }
 
         [Test]

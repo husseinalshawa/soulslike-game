@@ -56,6 +56,7 @@ namespace SoulsGame.World
             HasRider = false;
 
             player.transform.SetParent(null);
+            player.transform.localScale = Vector3.one; // حارس ضد أي تشوه مقياس موروث
             Vector3 beside = transform.position + transform.right * 1.5f;
             player.transform.position = WorldBuilder.OnGround(beside.x, beside.z, 1.1f);
             var riderController = player.GetComponent<CharacterController>();

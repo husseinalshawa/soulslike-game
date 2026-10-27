@@ -108,14 +108,19 @@ namespace SoulsGame.Core
 
         private void BuildHorse()
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            go.name = "Steed";
+            // الجذر بمقياس 1 دائماً: الراكب يُربط به، فلا يتشوه مقياسه أبداً —
+            // استطالة الحصان على ابن مرئي منفصل فقط
+            var go = new GameObject("Steed");
             go.transform.position = WorldBuilder.OnGround(5f, -30f, 0.9f);
-            go.transform.localScale = new Vector3(0.9f, 0.9f, 1.8f); // ممدود كجسد حصان
-            Tint(go, new Color(0.45f, 0.32f, 0.22f));
-
             go.SetActive(false);
-            Destroy(go.GetComponent<CapsuleCollider>());
+
+            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            body.name = "Body";
+            body.transform.SetParent(go.transform, false);
+            body.transform.localScale = new Vector3(0.9f, 0.9f, 1.8f);
+            Tint(body, new Color(0.45f, 0.32f, 0.22f));
+            Destroy(body.GetComponent<CapsuleCollider>());
+
             var controller = go.AddComponent<CharacterController>();
             controller.height = 1.8f;
             controller.radius = 0.5f;
@@ -126,7 +131,8 @@ namespace SoulsGame.Core
                 : Player.cameraRig != null ? Player.cameraRig.transform : null;
 
             Player.horse = Horse;
-            Player.mountForbiddenZones.Add(new ForbiddenZone { Center = Vector3.zero, Radius = 38f }); // الحصن
+            // 48 لا 38: هندسة الحصن تمتد حتى ~46.5م (غرفة البوس) بعد قرار الهضبة
+            Player.mountForbiddenZones.Add(new ForbiddenZone { Center = Vector3.zero, Radius = 48f });
             Player.mountForbiddenZones.Add(new ForbiddenZone
             {
                 Center = new Vector3((WorldHeightmap.CaveMouthCenter.x + WorldBuilder.CaveRoomCenter.x) * 0.5f,
@@ -204,18 +210,20 @@ namespace SoulsGame.Core
         {
             // الموقع 0 (مكتشف) أضافته Initialize عند نقطة البداية (بوابة الحصن)؛
             // 1 منتصف المرج؛ 2 فم الكهف
+            // مواضع الإحياء بمركز اللاعب (+1.1) — موضع على سطح الأرض تماماً
+            // يدفن الكبسولة نصفها في الـ MeshCollider عند الإحياء
             var midGrace = WorldBuilder.OnGround(WorldHeightmap.MidGraceCenter.x,
-                WorldHeightmap.MidGraceCenter.z, 0f);
+                WorldHeightmap.MidGraceCenter.z, 1.1f);
             var caveGrace = WorldBuilder.OnGround(WorldHeightmap.CaveMouthCenter.x,
-                WorldHeightmap.CaveMouthCenter.z, 0f);
+                WorldHeightmap.CaveMouthCenter.z, 1.1f);
             Loop.Graces.AddSite(1, midGrace, discovered: false);
             Loop.Graces.AddSite(2, caveGrace, discovered: false);
 
             Loop.graceMarkers = new[]
             {
-                BuildGraceMarker(0, Player.transform.position, lit: true),
-                BuildGraceMarker(1, midGrace, lit: false),
-                BuildGraceMarker(2, caveGrace, lit: false)
+                BuildGraceMarker(0, Player.transform.position - Vector3.up * 1.1f, lit: true),
+                BuildGraceMarker(1, midGrace - Vector3.up * 1.1f, lit: false),
+                BuildGraceMarker(2, caveGrace - Vector3.up * 1.1f, lit: false)
             };
         }
 
