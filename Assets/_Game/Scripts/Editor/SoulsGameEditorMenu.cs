@@ -39,6 +39,8 @@ namespace SoulsGame.EditorTools
             var bootstrap = bootstrapGo.AddComponent<GameBootstrap>();
             bootstrap.playerStats = AssetDatabase.LoadAssetAtPath<CharacterStats>("Assets/_Game/Data/PlayerStats.asset");
             bootstrap.playerWeapon = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Sword_Basic.asset");
+            bootstrap.enemyStats = AssetDatabase.LoadAssetAtPath<CharacterStats>("Assets/_Game/Data/EnemyMeleeStats.asset");
+            bootstrap.enemyWeapon = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Enemy_Sword.asset");
 
             System.IO.Directory.CreateDirectory("Assets/_Game/Scenes");
             EditorSceneManager.SaveScene(scene, "Assets/_Game/Scenes/Arena.unity");

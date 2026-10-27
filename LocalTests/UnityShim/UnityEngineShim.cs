@@ -32,6 +32,11 @@ namespace UnityEngine
         public static Vector3 operator *(Vector3 a, float d) => new Vector3(a.x * d, a.y * d, a.z * d);
         public static Vector3 operator *(float d, Vector3 a) => a * d;
 
+        public static bool operator ==(Vector3 a, Vector3 b) => (a - b).sqrMagnitude < 1e-10f;
+        public static bool operator !=(Vector3 a, Vector3 b) => !(a == b);
+        public override bool Equals(object other) => other is Vector3 v && this == v;
+        public override int GetHashCode() => x.GetHashCode() ^ (y.GetHashCode() << 2) ^ (z.GetHashCode() >> 2);
+
         public static float Dot(Vector3 a, Vector3 b) => a.x * b.x + a.y * b.y + a.z * b.z;
         public static float Distance(Vector3 a, Vector3 b) => (a - b).magnitude;
         public static float Angle(Vector3 from, Vector3 to)

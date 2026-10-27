@@ -1,5 +1,6 @@
 using SoulsGame.Combat;
 using SoulsGame.Data;
+using SoulsGame.Enemies;
 using SoulsGame.Player;
 using UnityEngine;
 
@@ -13,17 +14,79 @@ namespace SoulsGame.Core
         [Tooltip("اختياري: أصول موازنة من المشروع؛ إن تُركت فارغة تُستخدم القيم الافتراضية")]
         public CharacterStats playerStats;
         public WeaponData playerWeapon;
+        public CharacterStats enemyStats;
+        public WeaponData enemyWeapon;
 
         public PlayerAvatar Player { get; private set; }
+        public EnemyAvatar Enemy { get; private set; }
 
         private void Awake()
         {
             if (playerStats == null) playerStats = ScriptableObject.CreateInstance<CharacterStats>();
             if (playerWeapon == null) playerWeapon = ScriptableObject.CreateInstance<WeaponData>();
+            if (enemyStats == null)
+            {
+                enemyStats = ScriptableObject.CreateInstance<CharacterStats>();
+                enemyStats.maxHealth = 150f;
+                enemyStats.maxPoise = 30f;
+            }
+            if (enemyWeapon == null)
+            {
+                enemyWeapon = ScriptableObject.CreateInstance<WeaponData>();
+                enemyWeapon.lightDamage = 20f;
+                enemyWeapon.lightPoiseDamage = 20f;
+                enemyWeapon.lightStaminaCost = 0f;
+                enemyWeapon.light = new AttackTimeline(0.6f, 0.3f, 1.2f, 1.2f);
+            }
 
             BuildArena();
             Player = BuildPlayer(new Vector3(0f, 1.1f, -12f));
             BuildCamera(Player);
+            Enemy = BuildEnemy(new Vector3(0f, 1.1f, 5f),
+                new Vector3(-5f, 1.1f, 5f), new Vector3(5f, 1.1f, 5f));
+        }
+
+        private EnemyAvatar BuildEnemy(Vector3 position, Vector3 patrolA, Vector3 patrolB)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            go.name = "EnemyMelee";
+            go.transform.position = position;
+            Tint(go, new Color(0.6f, 0.2f, 0.2f));
+
+            var damageable = go.AddComponent<Damageable>();
+            damageable.stats = enemyStats;
+
+            var hurtboxGo = new GameObject("Hurtbox");
+            hurtboxGo.transform.SetParent(go.transform, false);
+            var hurtCollider = hurtboxGo.AddComponent<CapsuleCollider>();
+            hurtCollider.isTrigger = true;
+            hurtCollider.height = 2f;
+            hurtCollider.radius = 0.45f;
+            var hurtbox = hurtboxGo.AddComponent<Hurtbox>();
+            hurtbox.owner = damageable;
+
+            var weaponGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            weaponGo.name = "Weapon";
+            weaponGo.transform.SetParent(go.transform, false);
+            weaponGo.transform.localPosition = new Vector3(0f, 0.2f, 1.0f);
+            weaponGo.transform.localScale = new Vector3(0.25f, 0.25f, 1.6f);
+            Tint(weaponGo, new Color(0.4f, 0.25f, 0.25f));
+            var weaponCollider = weaponGo.GetComponent<Collider>();
+            weaponCollider.isTrigger = true;
+            var weaponBody = weaponGo.AddComponent<Rigidbody>();
+            weaponBody.isKinematic = true;
+            var hitbox = weaponGo.AddComponent<Hitbox>();
+            hitbox.ignoreOwner = damageable;
+
+            var enemy = go.AddComponent<EnemyAvatar>();
+            enemy.stats = enemyStats;
+            enemy.weapon = enemyWeapon;
+            enemy.weaponHitbox = hitbox;
+            enemy.player = Player.transform;
+            enemy.patrolA = patrolA;
+            enemy.patrolB = patrolB;
+
+            return enemy;
         }
 
         private void BuildCamera(PlayerAvatar player)
