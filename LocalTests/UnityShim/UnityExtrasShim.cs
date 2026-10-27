@@ -135,6 +135,13 @@ namespace UnityEngine.InputSystem.Controls
     public class KeyControl
     {
         public bool isPressed => false;
+        public bool wasPressedThisFrame => false;
+    }
+
+    public class DpadControl
+    {
+        public KeyControl left => null;
+        public KeyControl right => null;
     }
 }
 
@@ -144,6 +151,14 @@ namespace UnityEngine.InputSystem
     {
         public static Keyboard current => null;
         public Controls.KeyControl leftShiftKey => null;
+        public Controls.KeyControl leftArrowKey => null;
+        public Controls.KeyControl rightArrowKey => null;
+    }
+
+    public class Gamepad
+    {
+        public static Gamepad current => null;
+        public Controls.DpadControl dpad => null;
     }
 
     public enum InputActionType { Value, Button, PassThrough }

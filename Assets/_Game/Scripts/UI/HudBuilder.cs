@@ -114,6 +114,40 @@ namespace SoulsGame.UI
             return menu;
         }
 
+        // مرئيات شاشة العنوان فوق غطاء أسود كامل (null-safe للبيئات بلا HUD).
+        public static void BuildTitleVisuals(TitleScreen title)
+        {
+            var canvas = GameObject.Find("HUD");
+            if (canvas == null) return;
+
+            var cover = CreateImage(canvas.transform, "TitleCover", new Color(0f, 0f, 0f, 1f));
+            var rect = cover.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.sizeDelta = Vector2.zero;
+            cover.transform.SetAsLastSibling();
+
+            var titleText = MakeLabel(cover.transform, new Vector2(0f, 80f), 46);
+            titleText.text = "THE WITHERED MEADOW";
+            titleText.alignment = TextAnchor.MiddleCenter;
+            titleText.color = new Color(0.85f, 0.7f, 0.25f);
+            titleText.GetComponent<RectTransform>().sizeDelta = new Vector2(900f, 70f);
+
+            var hint = MakeLabel(cover.transform, new Vector2(0f, -40f), 20);
+            hint.text = "Press E to begin";
+            hint.alignment = TextAnchor.MiddleCenter;
+            hint.GetComponent<RectTransform>().sizeDelta = new Vector2(500f, 30f);
+
+            var sensitivity = MakeLabel(cover.transform, new Vector2(0f, -100f), 16);
+            sensitivity.text = "Camera Sensitivity  ◀ 1.00 ▶";
+            sensitivity.alignment = TextAnchor.MiddleCenter;
+            sensitivity.GetComponent<RectTransform>().sizeDelta = new Vector2(500f, 26f);
+
+            title.panel = cover.gameObject;
+            title.cover = cover;
+            title.sensitivityLabel = sensitivity;
+        }
+
         // غطاء التلاشي الأسود — فوق كل عناصر الواجهة.
         public static FadeOverlay BuildFadeOverlay()
         {

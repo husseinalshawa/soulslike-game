@@ -163,6 +163,19 @@ namespace SoulsGame.Core
             BuildGearPickups();
             BuildChapelAndStory();
             WireFeel();
+            BuildTitleScreen();
+        }
+
+        // اللعبة تفتح على عنوانها: غطاء أسود + إدخال مقفول حتى أول E.
+        private void BuildTitleScreen()
+        {
+            var titleGo = new GameObject("TitleScreen");
+            var title = titleGo.AddComponent<UI.TitleScreen>();
+            title.cameraRig = Player.cameraRig;
+            UI.HudBuilder.BuildTitleVisuals(title);
+            Loop.titleScreen = title;
+            Player.InputLocked = true;
+            EnemyAvatar.AggroSuppressed = true;
         }
 
         // ربط الإحساس: hit-stop حسب حالة عقل اللاعب، واهتزازات الكاميرا.

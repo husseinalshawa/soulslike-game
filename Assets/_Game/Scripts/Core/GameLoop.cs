@@ -30,6 +30,7 @@ namespace SoulsGame.Core
         public DialoguePanel dialoguePanel;
         public Toast banner;
         public FadeOverlay fadeOverlay;
+        public TitleScreen titleScreen;
         public const float AltarRadius = 2.5f;
         public const int AltarReward = 3000;
 
@@ -61,6 +62,12 @@ namespace SoulsGame.Core
         {
             if (player.Damageable.Health.IsDead)
                 return;
+            // شاشة العنوان أولاً: E الأولى تبدأ اللعبة
+            if (titleScreen != null && titleScreen.IsOpen)
+            {
+                BeginGame();
+                return;
+            }
             if (Dialogue.IsActive)
             {
                 Dialogue.Advance();
@@ -89,6 +96,14 @@ namespace SoulsGame.Core
             }
             if (Graces.CanRest(player.transform.position, out int siteId))
                 RestAtGrace(siteId);
+        }
+
+        // بدء اللعبة من شاشة العنوان: تلاشي الغطاء وتحرير الإدخال والعدوان.
+        public void BeginGame()
+        {
+            titleScreen?.BeginGame();
+            player.InputLocked = false;
+            EnemyAvatar.AggroSuppressed = false;
         }
 
         private NpcAvatar NearestNpcInRange()

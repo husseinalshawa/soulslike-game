@@ -130,6 +130,42 @@ namespace SoulsGame.Tests
                 "شحنة الرمح 2.4 + مدى 2.4 = 4.8م الموعودة");
         }
 
+        // ---- شاشة العنوان ----
+
+        [Test]
+        public void GameStarts_Locked_TitleOpen()
+        {
+            var bootstrap = Build();
+            Assert.IsNotNull(bootstrap.Loop.titleScreen, "شاشة العنوان مبنية");
+            Assert.IsTrue(bootstrap.Loop.titleScreen.IsOpen, "اللعبة تفتح على عنوانها");
+            Assert.IsTrue(bootstrap.Player.InputLocked, "الإدخال مقفول قبل البدء");
+            Assert.IsTrue(Enemies.EnemyAvatar.AggroSuppressed, "لا عدوان قبل البدء");
+        }
+
+        [Test]
+        public void Interact_BeginsGame_Once()
+        {
+            var bootstrap = Build();
+            var loop = bootstrap.Loop;
+
+            loop.HandleInteract(); // E الأولى: بدء
+            Assert.IsFalse(loop.titleScreen.IsOpen);
+            Assert.IsFalse(bootstrap.Player.InputLocked, "تحرر الإدخال");
+            Assert.IsFalse(Enemies.EnemyAvatar.AggroSuppressed);
+
+            loop.HandleInteract(); // الثانية: الأولويات العادية (جلوس عند نقطة البداية)
+            Assert.IsTrue(loop.levelUpMenu.IsOpen, "E التالية تتصرف طبيعياً");
+        }
+
+        [Test]
+        public void Sensitivity_AppliesToCamera()
+        {
+            var bootstrap = Build();
+            bootstrap.Loop.titleScreen.AdjustSensitivity(+1);
+            Assert.AreEqual(1.25f, bootstrap.Player.cameraRig.SensitivityMultiplier, 0.001f,
+                "الحساسية تطبق فوراً على الكاميرا");
+        }
+
         // ---- الثانويات 8-12 ----
 
         [Test]
@@ -137,6 +173,7 @@ namespace SoulsGame.Tests
         {
             var bootstrap = Build();
             var loop = bootstrap.Loop;
+            loop.BeginGame(); // تجاوز شاشة العنوان
             var player = bootstrap.Player;
 
             player.transform.position = new Vector3(50f, 5f, -80f);
