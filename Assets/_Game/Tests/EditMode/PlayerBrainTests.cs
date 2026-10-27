@@ -158,6 +158,124 @@ namespace SoulsGame.Tests
             Assert.AreEqual(PlayerStateId.Death, brain.CurrentState);
         }
 
+        // ---- المرحلة 4: الإلقاء والمهارات وملف التفادي ----
+
+        private PlayerBrain NewBrainWithFocus(WeaponData w, out FocusPool focus)
+        {
+            focus = new FocusPool(60f);
+            var s = ScriptableObject.CreateInstance<CharacterStats>();
+            var st = new StaminaPool(s.maxStamina, s.staminaRegenPerSecond, s.staminaRegenDelay, s.blockingRegenMultiplier);
+            return new PlayerBrain(st, w, s, focus);
+        }
+
+        [Test]
+        public void Cast_ConsumesFp_AndReleasesAtActive()
+        {
+            var b = NewBrainWithFocus(Data.GearLibrary.Longsword(), out var focus);
+            Data.SpellData released = null;
+            b.SpellReleased += sp => released = sp;
+            var bolt = Data.GearLibrary.GlintBolt();
+
+            Assert.IsTrue(b.RequestCast(bolt));
+            Assert.AreEqual(PlayerStateId.Cast, b.CurrentState);
+            Assert.AreEqual(48f, focus.Current, "خُصم 12 FP");
+            Assert.IsNull(released, "لا إطلاق أثناء التحضير");
+
+            for (float t = 0f; t < 0.4f; t += 0.05f) b.Tick(0.05f); // تجاوز التحضير 0.35
+            Assert.AreSame(bolt, released, "الإطلاق عند بدء الطور الفعال");
+
+            for (float t = 0f; t < 0.6f; t += 0.05f) b.Tick(0.05f); // اكتمال 0.9
+            Assert.AreEqual(PlayerStateId.Locomotion, b.CurrentState);
+        }
+
+        [Test]
+        public void Cast_InsufficientFp_RejectedWithEvent()
+        {
+            var b = NewBrainWithFocus(Data.GearLibrary.Longsword(), out var focus);
+            focus.TrySpend(55f); // بقي 5 < 12
+            bool rejected = false;
+            b.FocusRejected += () => rejected = true;
+
+            Assert.IsFalse(b.RequestCast(Data.GearLibrary.GlintBolt()));
+            Assert.IsTrue(rejected);
+            Assert.AreEqual(PlayerStateId.Locomotion, b.CurrentState);
+        }
+
+        [Test]
+        public void Skill_MultiHit_OpensWindowsHitCountTimes()
+        {
+            var b = NewBrainWithFocus(Data.GearLibrary.TwinDaggers(), out var focus);
+            int opens = 0, closes = 0;
+            b.SkillWindowOpen += () => opens++;
+            b.SkillWindowClose += () => closes++;
+
+            Assert.IsTrue(b.RequestSkill());
+            Assert.AreEqual(PlayerStateId.Skill, b.CurrentState);
+            Assert.AreEqual(42f, focus.Current, "الوابل 18 FP");
+
+            for (float t = 0f; t < 1.6f; t += 0.02f) b.Tick(0.02f); // اكتمال 1.45
+
+            Assert.AreEqual(3, opens, "ثلاث نوافذ ضرر");
+            Assert.AreEqual(3, closes);
+            Assert.AreEqual(PlayerStateId.Locomotion, b.CurrentState);
+        }
+
+        [Test]
+        public void Skill_StaggerMidWay_CancelsRemainingWindows()
+        {
+            var b = NewBrainWithFocus(Data.GearLibrary.TwinDaggers(), out _);
+            int opens = 0, closes = 0;
+            b.SkillWindowOpen += () => opens++;
+            b.SkillWindowClose += () => closes++;
+
+            b.RequestSkill();
+            for (float t = 0f; t < 0.3f; t += 0.02f) b.Tick(0.02f); // داخل النافذة الأولى
+            Assert.AreEqual(1, opens);
+
+            b.NotifyDamaged(poiseBroken: true);
+            Assert.AreEqual(PlayerStateId.Stagger, b.CurrentState);
+            Assert.AreEqual(1, closes, "كسر التوازن يغلق النافذة المفتوحة");
+
+            for (float t = 0f; t < 1.5f; t += 0.02f) b.Tick(0.02f);
+            Assert.AreEqual(1, opens, "بقية النوافذ أُسقطت");
+        }
+
+        [Test]
+        public void SetWeapon_OnlyFromNeutral()
+        {
+            var longsword = Data.GearLibrary.Longsword();
+            var daggers = Data.GearLibrary.TwinDaggers();
+            var b = NewBrainWithFocus(longsword, out _);
+
+            b.RequestLightAttack();
+            b.SetWeapon(daggers); // أثناء الالتزام: مرفوض
+            Assert.AreSame(longsword, b.CurrentWeapon);
+
+            for (float t = 0f; t < 1.0f; t += 0.05f) b.Tick(0.05f); // عودة Locomotion
+            b.SetWeapon(daggers);
+            Assert.AreSame(daggers, b.CurrentWeapon);
+        }
+
+        [Test]
+        public void DodgeProfile_StretchesDuration_KeepsIFrameWindow()
+        {
+            var b = NewBrainWithFocus(Data.GearLibrary.Longsword(), out _);
+            var invulnOff = -1f;
+            float clock = 0f;
+            b.InvulnerabilityChanged += on => { if (!on) invulnOff = clock; };
+
+            b.SetDodgeProfile(1.3f); // صفائح: المدة 0.78
+            b.RequestDodge();
+            while (b.CurrentState == PlayerStateId.Dodge && clock < 2f)
+            {
+                b.Tick(0.02f);
+                clock += 0.02f;
+            }
+
+            Assert.AreEqual(0.4f, invulnOff, 0.03f, "نافذة الحصانة مطلقة [0.1, 0.4]");
+            Assert.GreaterOrEqual(clock, 0.76f, "المدة الكلية ممدودة ×1.3");
+        }
+
         [Test]
         public void PoiseBreak_InterruptsAttack_AndClosesHitbox()
         {
