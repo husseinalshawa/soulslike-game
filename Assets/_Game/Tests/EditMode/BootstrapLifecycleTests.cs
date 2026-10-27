@@ -120,6 +120,54 @@ namespace SoulsGame.Tests
         }
 
         [Test]
+        public void Gear_PickupsAndSwitching()
+        {
+            var go = new GameObject("Bootstrap");
+            var bootstrap = go.AddComponent<GameBootstrap>();
+            var player = bootstrap.Player;
+
+            Assert.AreEqual(1, player.Weapons.Count, "يبدأ بالسيف الطويل فقط");
+            Assert.AreEqual(1, player.Armors.Count, "يبدأ بقماش الجوّال");
+            Assert.AreEqual(2, player.Spells.Count, "التعويذتان منذ البداية");
+            Assert.AreEqual(60f, player.Focus.Max);
+            Assert.AreEqual(6, bootstrap.Pickups.Length, "أربعة أسلحة ودرعان في العالم");
+
+            // التقاط السيف العظيم من موضعه
+            var greatswordPickup = bootstrap.Pickups[0];
+            Assert.AreEqual(1, greatswordPickup.TryCollect(greatswordPickup.transform.position),
+                "الالتقاط ضمن النطاق");
+            Assert.AreEqual(0, greatswordPickup.TryCollect(greatswordPickup.transform.position),
+                "مرة واحدة");
+            Assert.AreEqual(2, player.Weapons.Count);
+            Assert.AreEqual("Greatsword", player.Weapons.Current.weaponName, "المُلتقط يتجهز");
+            Assert.AreSame(player.Weapons.Current, player.Brain.CurrentWeapon, "العقل تبعه");
+        }
+
+        [Test]
+        public void Armor_ReducesDamage_AndBuffRaisesAttack()
+        {
+            var go = new GameObject("Bootstrap");
+            var bootstrap = go.AddComponent<GameBootstrap>();
+            var player = bootstrap.Player;
+
+            // درع الصفائح: تخفيض 30%
+            var platePickup = bootstrap.Pickups[1];
+            platePickup.TryCollect(platePickup.transform.position);
+            Assert.AreEqual("Warden Plate", player.Armors.Current.armorName);
+
+            float before = player.Damageable.Health.Current;
+            player.Damageable.ApplyDamage(new Combat.DamagePacket(20f, 0f, Vector3.zero));
+            Assert.AreEqual(before - 14f, player.Damageable.Health.Current, 0.01f,
+                "ضربة 20 تخصم 14 مع تخفيض 30%");
+
+            // تعزيز السلاح: +10 على ضرر الضربة
+            float baseDamage = player.CurrentAttackDamage(Combat.AttackType.Light);
+            player.Buff.Activate(10f, 30f);
+            Assert.AreEqual(baseDamage + 10f, player.CurrentAttackDamage(Combat.AttackType.Light),
+                "التعزيز يرفع ضرر الحزمة");
+        }
+
+        [Test]
         public void Horse_SummonRideAndForcedDismount()
         {
             var go = new GameObject("Bootstrap");

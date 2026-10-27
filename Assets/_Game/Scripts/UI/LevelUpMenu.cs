@@ -14,9 +14,11 @@ namespace SoulsGame.UI
         public Text vigorValue;
         public Text enduranceValue;
         public Text strengthValue;
+        public Text mindValue;
         public Button vigorButton;
         public Button enduranceButton;
         public Button strengthButton;
+        public Button mindButton;
 
         private PlayerAvatar player;
 
@@ -28,6 +30,7 @@ namespace SoulsGame.UI
             vigorButton.onClick.AddListener(() => Buy(StatId.Vigor));
             enduranceButton.onClick.AddListener(() => Buy(StatId.Endurance));
             strengthButton.onClick.AddListener(() => Buy(StatId.Strength));
+            mindButton.onClick.AddListener(() => Buy(StatId.Mind));
         }
 
         public void Open()
@@ -63,11 +66,13 @@ namespace SoulsGame.UI
             vigorValue.text = $"Vigor {p.GetStat(StatId.Vigor)}  (+12 HP)";
             enduranceValue.text = $"Endurance {p.GetStat(StatId.Endurance)}  (+6 ST)";
             strengthValue.text = $"Strength {p.GetStat(StatId.Strength)}  (+2 DMG)";
+            mindValue.text = $"Mind {p.GetStat(StatId.Mind)}  (+5 FP)";
 
             bool affordable = player.Wallet.Current >= p.NextLevelCost;
             vigorButton.interactable = affordable;
             enduranceButton.interactable = affordable;
             strengthButton.interactable = affordable;
+            mindButton.interactable = affordable;
         }
     }
 }

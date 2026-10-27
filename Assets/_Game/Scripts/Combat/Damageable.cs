@@ -18,6 +18,9 @@ namespace SoulsGame.Combat
         // اعتراض قبل تطبيق الضرر (الصد): إن أعاد true فالضربة امتُصت بالكامل.
         public Func<DamagePacket, bool> DamageInterceptor { get; set; }
 
+        // تحويل الحزمة بعد فشل الاعتراض وقبل الخصم (تخفيض الدرع).
+        public Func<DamagePacket, DamagePacket> DamageTransform { get; set; }
+
         public event Action<DamagePacket> Damaged;
         public event Action PoiseBroken;
         public event Action Died;
@@ -41,6 +44,9 @@ namespace SoulsGame.Combat
 
             if (DamageInterceptor != null && DamageInterceptor(packet))
                 return;
+
+            if (DamageTransform != null)
+                packet = DamageTransform(packet);
 
             Health.TakeDamage(packet.HealthDamage);
             Damaged?.Invoke(packet);

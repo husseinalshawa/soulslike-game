@@ -17,6 +17,11 @@ namespace SoulsGame.Player
         public readonly InputAction LockOn;
         public readonly InputAction Interact;
         public readonly InputAction Mount;
+        public readonly InputAction SwitchWeapon;
+        public readonly InputAction SwitchArmor;
+        public readonly InputAction SwitchSpell;
+        public readonly InputAction CastSpell;
+        public readonly InputAction WeaponSkill;
 
         private readonly InputActionMap map;
 
@@ -71,6 +76,26 @@ namespace SoulsGame.Player
             Mount = map.AddAction("Mount", InputActionType.Button);
             Mount.AddBinding("<Keyboard>/r");
             Mount.AddBinding("<Gamepad>/select");
+
+            SwitchWeapon = map.AddAction("SwitchWeapon", InputActionType.Button);
+            SwitchWeapon.AddBinding("<Keyboard>/tab");
+            SwitchWeapon.AddBinding("<Gamepad>/dpad/right");
+
+            SwitchArmor = map.AddAction("SwitchArmor", InputActionType.Button);
+            SwitchArmor.AddBinding("<Keyboard>/g");
+            SwitchArmor.AddBinding("<Gamepad>/dpad/down");
+
+            SwitchSpell = map.AddAction("SwitchSpell", InputActionType.Button);
+            SwitchSpell.AddBinding("<Keyboard>/v");
+            SwitchSpell.AddBinding("<Gamepad>/dpad/left");
+
+            CastSpell = map.AddAction("CastSpell", InputActionType.Button);
+            CastSpell.AddBinding("<Keyboard>/c");
+            CastSpell.AddBinding("<Gamepad>/buttonWest");
+
+            WeaponSkill = map.AddAction("WeaponSkill", InputActionType.Button);
+            WeaponSkill.AddBinding("<Keyboard>/f");
+            WeaponSkill.AddBinding("<Gamepad>/leftTrigger");
         }
 
         public void Enable() => map.Enable();

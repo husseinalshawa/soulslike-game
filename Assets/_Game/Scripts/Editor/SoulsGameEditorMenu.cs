@@ -36,7 +36,16 @@ namespace SoulsGame.EditorTools
         public static void CreateDataAssets()
         {
             CreateAssetIfMissing<CharacterStats>("Assets/_Game/Data/PlayerStats.asset", null);
-            CreateAssetIfMissing<WeaponData>("Assets/_Game/Data/Sword_Basic.asset", null);
+            CreateGearAssetIfMissing("Assets/_Game/Data/Sword_Basic.asset", GearLibrary.Longsword());
+            // ترحيل أصل سيف موجود من المرحلة 1 بلا مهارة (fpCost=0 = struct فارغ)
+            var existingSword = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Sword_Basic.asset");
+            if (existingSword != null && existingSword.skill.fpCost <= 0f)
+            {
+                var template = GearLibrary.Longsword();
+                existingSword.skill = template.skill;
+                Object.DestroyImmediate(template);
+                EditorUtility.SetDirty(existingSword);
+            }
             CreateAssetIfMissing<CharacterStats>("Assets/_Game/Data/EnemyMeleeStats.asset", s =>
             {
                 s.maxHealth = 150f;
@@ -66,6 +75,17 @@ namespace SoulsGame.EditorTools
                 s.runSpeed = 3.5f;
                 s.soulsReward = 2000;
             });
+            // عتاد المرحلة 4 — من GearLibrary (مصدر الأرقام الواحد المُختبر)
+            CreateGearAssetIfMissing("Assets/_Game/Data/Weapon_Greatsword.asset", GearLibrary.Greatsword());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Weapon_TwinDaggers.asset", GearLibrary.TwinDaggers());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Weapon_Spear.asset", GearLibrary.Spear());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Weapon_Warhammer.asset", GearLibrary.Warhammer());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Armor_Cloth.asset", GearLibrary.Cloth());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Armor_Leather.asset", GearLibrary.Leather());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Armor_Plate.asset", GearLibrary.Plate());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Spell_GlintBolt.asset", GearLibrary.GlintBolt());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Spell_GlintbladeEdge.asset", GearLibrary.WeaponBuffSpell());
+
             AssetDatabase.SaveAssets();
             Debug.Log("SoulsGame: data assets ready under Assets/_Game/Data/");
         }
@@ -84,10 +104,30 @@ namespace SoulsGame.EditorTools
             bootstrap.progressionData = AssetDatabase.LoadAssetAtPath<ProgressionData>("Assets/_Game/Data/Progression.asset");
             bootstrap.bossStats = AssetDatabase.LoadAssetAtPath<CharacterStats>("Assets/_Game/Data/BossStats.asset");
             bootstrap.worldTheme = AssetDatabase.LoadAssetAtPath<WorldTheme>("Assets/_Game/Data/WorldTheme.asset");
+            // عتاد المرحلة 4: المشهد يشير للأصول كي يكون تعديلها من الـ Inspector فعالاً
+            bootstrap.greatswordData = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Weapon_Greatsword.asset");
+            bootstrap.twinDaggersData = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Weapon_TwinDaggers.asset");
+            bootstrap.spearData = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Weapon_Spear.asset");
+            bootstrap.warhammerData = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Weapon_Warhammer.asset");
+            bootstrap.clothArmorData = AssetDatabase.LoadAssetAtPath<ArmorData>("Assets/_Game/Data/Armor_Cloth.asset");
+            bootstrap.leatherArmorData = AssetDatabase.LoadAssetAtPath<ArmorData>("Assets/_Game/Data/Armor_Leather.asset");
+            bootstrap.plateArmorData = AssetDatabase.LoadAssetAtPath<ArmorData>("Assets/_Game/Data/Armor_Plate.asset");
+            bootstrap.boltSpellData = AssetDatabase.LoadAssetAtPath<SpellData>("Assets/_Game/Data/Spell_GlintBolt.asset");
+            bootstrap.buffSpellData = AssetDatabase.LoadAssetAtPath<SpellData>("Assets/_Game/Data/Spell_GlintbladeEdge.asset");
 
             System.IO.Directory.CreateDirectory("Assets/_Game/Scenes");
             EditorSceneManager.SaveScene(scene, "Assets/_Game/Scenes/Arena.unity");
             Debug.Log("SoulsGame: Arena scene saved — press Play to build and play the arena.");
+        }
+
+        private static void CreateGearAssetIfMissing(string path, ScriptableObject instance)
+        {
+            if (AssetDatabase.LoadAssetAtPath<ScriptableObject>(path) != null)
+            {
+                Object.DestroyImmediate(instance);
+                return;
+            }
+            AssetDatabase.CreateAsset(instance, path);
         }
 
         private static void CreateAssetIfMissing<T>(string path, System.Action<T> configure) where T : ScriptableObject

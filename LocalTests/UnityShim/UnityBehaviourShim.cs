@@ -64,13 +64,13 @@ namespace UnityEngine
     // التي تنفجر أول ما يضغط الشريك Play في Unity الحقيقي.
     public class Component : Object
     {
-        internal GameObject owner;
-        public GameObject gameObject => owner;
-        public Transform transform => owner?.transform;
-        public T GetComponent<T>() => owner != null ? owner.GetComponent<T>() : default;
+        internal GameObject shimOwner;
+        public GameObject gameObject => shimOwner;
+        public Transform transform => shimOwner?.transform;
+        public T GetComponent<T>() => shimOwner != null ? shimOwner.GetComponent<T>() : default;
         public T GetComponentInParent<T>() => GetComponent<T>();
         public T GetComponentInChildren<T>() => GetComponent<T>();
-        public T[] GetComponentsInChildren<T>() => owner != null ? owner.GetComponents<T>() : Array.Empty<T>();
+        public T[] GetComponentsInChildren<T>() => shimOwner != null ? shimOwner.GetComponents<T>() : Array.Empty<T>();
     }
 
     public class Behaviour : Component
@@ -117,7 +117,7 @@ namespace UnityEngine
         public GameObject(string name)
         {
             this.name = name;
-            var t = new Transform { owner = this };
+            var t = new Transform { shimOwner = this };
             components.Add(t);
             transform = t;
         }
@@ -142,10 +142,10 @@ namespace UnityEngine
 
         public T AddComponent<T>() where T : Component, new()
         {
-            var component = new T { owner = this };
+            var component = new T { shimOwner = this };
             // كائنات الواجهة في Unity تحمل RectTransform تلقائياً
             if ((component is UI.Graphic || component is Canvas) && GetComponent<RectTransform>() == null)
-                components.Add(new RectTransform { owner = this });
+                components.Add(new RectTransform { shimOwner = this });
             components.Add(component);
             if (active)
                 InvokeAwake(component);

@@ -18,7 +18,22 @@ namespace SoulsGame.Player
         // يغذيها PlayerAvatar كل إطار
         public Vector2 MoveInput { get; set; }
         public bool SprintActive { get; set; }
-        public PlayerStateId State { get; set; } = PlayerStateId.Locomotion;
+
+        // مغادرة حالة المهارة (كسر توازن مثلاً) تصفّر بقية الاندفاعة —
+        // وإلا تسربت لمهارة لاحقة بلا اندفاع (Quake/Flurry).
+        public PlayerStateId State
+        {
+            get => state;
+            set
+            {
+                if (value != PlayerStateId.Skill)
+                    skillDashRemaining = 0f;
+                state = value;
+            }
+        }
+        private PlayerStateId state = PlayerStateId.Locomotion;
+
+        public float SkillDashRemaining => skillDashRemaining;
 
         // هدف القفل: عند وجوده يتحول اللاعب لوضع strafe (يواجه الهدف)
         public Transform StrafeTarget { get; set; }
@@ -26,15 +41,29 @@ namespace SoulsGame.Player
         // أثناء الركوب: الحصان هو من يتحرك — المحرك متجمد تماماً
         public bool Frozen { get; set; }
 
+        // ملف تفادي الدرع: المسافة والمدة تُضربان بمضاعفي الدرع المجهز
+        public float DodgeDistanceMultiplier { get; set; } = 1f;
+        public float DodgeDurationMultiplier { get; set; } = 1f;
+
         private CharacterController controller;
         private Vector3 dodgeDirection;
         private float verticalVelocity;
+        private float skillDashRemaining;
+        private float skillDashSpeed;
 
         public Vector3 LastPlanarDirection { get; private set; } = Vector3.forward;
 
         private void Awake()
         {
             controller = GetComponent<CharacterController>();
+        }
+
+        // اندفاع مهارة السلاح (اندفاعة قاطعة/شحنة خارقة): للأمام خلال ربع ثانية.
+        public void BeginSkillDash(float distance)
+        {
+            const float dashDuration = 0.25f;
+            skillDashRemaining = dashDuration;
+            skillDashSpeed = distance / dashDuration;
         }
 
         public void BeginDodge()
@@ -73,9 +102,17 @@ namespace SoulsGame.Player
                     break;
                 }
                 case PlayerStateId.Dodge:
-                    planar = dodgeDirection * (DodgeDistance / PlayerBrain.DodgeDuration);
+                    planar = dodgeDirection * (DodgeDistance * DodgeDistanceMultiplier
+                        / (PlayerBrain.DodgeDuration * DodgeDurationMultiplier));
                     break;
-                // Attack/Stagger/Death: لا حركة أفقية — الالتزام بالحركة
+                // Attack/Cast/Stagger/Death: لا حركة أفقية — الالتزام بالحركة
+                case PlayerStateId.Skill:
+                    if (skillDashRemaining > 0f)
+                    {
+                        skillDashRemaining -= dt;
+                        planar = transform.forward * skillDashSpeed;
+                    }
+                    break;
             }
 
             verticalVelocity = controller.isGrounded ? -1f : verticalVelocity + Gravity * dt;

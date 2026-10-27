@@ -67,6 +67,18 @@ namespace SoulsGame.Tests
         }
 
         [Test]
+        public void Mind_RaisesMaxFocus()
+        {
+            var p = NewProgression(out var wallet);
+            wallet.Add(100);
+
+            Assert.AreEqual(60f, p.MaxFocus, "الأساس 60");
+            p.TryLevelUp(StatId.Mind, wallet);
+            Assert.AreEqual(65f, p.MaxFocus, "رُوحانية +1 = +5 تركيز");
+            Assert.AreEqual(100f, p.MaxHealth, "لا تمس الصحة");
+        }
+
+        [Test]
         public void Endurance_RaisesMaxStamina()
         {
             var p = NewProgression(out var wallet);

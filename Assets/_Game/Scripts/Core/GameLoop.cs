@@ -61,6 +61,7 @@ namespace SoulsGame.Core
             Graces.RestAt(siteId);
             player.Damageable.ResetToFull();
             player.Stamina.ResetToFull();
+            player.Focus.ResetToFull();
 
             if (enemies != null)
                 foreach (var enemy in enemies)
@@ -75,6 +76,7 @@ namespace SoulsGame.Core
         {
             if (levelUpMenu != null && levelUpMenu.IsOpen)
                 levelUpMenu.Close();
+            player.Buff.Clear(); // التعزيز يسقط بالموت
             Ledger.Drop(player.transform.position, player.Wallet.TakeAll());
             RefreshStainMarker();
             deathScreen.Show();
@@ -146,6 +148,7 @@ namespace SoulsGame.Core
 
             player.Damageable.ResetToFull();
             player.Stamina.ResetToFull();
+            player.Focus.ResetToFull();
             player.Brain.Revive();
 
             if (enemies != null)

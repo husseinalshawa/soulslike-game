@@ -87,3 +87,11 @@ namespace UnityEngine
         public TooltipAttribute(string tooltip) { }
     }
 }
+
+namespace UnityEngine
+{
+    public class RangeAttribute : System.Attribute
+    {
+        public RangeAttribute(float min, float max) { }
+    }
+}
