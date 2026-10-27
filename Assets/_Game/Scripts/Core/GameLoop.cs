@@ -224,13 +224,34 @@ namespace SoulsGame.Core
             player.Buff.Clear(); // التعزيز يسقط بالموت
             Ledger.Drop(player.transform.position, player.Wallet.TakeAll());
             RefreshStainMarker();
-            deathScreen.Show();
+            // YOU DIED تظهر فوق الأسود الكامل لا تحته — بعد اكتمال التعتيم
+            if (fadeOverlay != null)
+                pendingDeathShow = true;
+            else
+                deathScreen.Show();
+        }
+
+        private bool pendingDeathShow;
+
+        // يراقب اكتمال تعتيم الموت ثم يُظهر YOU DIED — يستدعيه Update،
+        // ومفصول ليُختبر في الشيم.
+        public void ProcessDeathSequence()
+        {
+            if (!pendingDeathShow || fadeOverlay == null)
+                return;
+            if (fadeOverlay.Fade.Done && fadeOverlay.Fade.Alpha >= 1f)
+            {
+                pendingDeathShow = false;
+                deathScreen.Show();
+            }
         }
 
         private void Update()
         {
             if (player == null || player.Damageable.Health.IsDead)
                 return;
+
+            ProcessDeathSequence();
 
             int recovered = Ledger.TryRecover(player.transform.position, RecoverRadius);
             if (recovered > 0)
@@ -290,6 +311,7 @@ namespace SoulsGame.Core
 
         public void Respawn()
         {
+            pendingDeathShow = false;
             if (levelUpMenu != null && levelUpMenu.IsOpen)
                 levelUpMenu.Close();
 

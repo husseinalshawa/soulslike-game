@@ -182,26 +182,27 @@ namespace SoulsGame.Core
         private void WireFeel()
         {
             var rig = Player.cameraRig;
-            System.Action<Vector3, float> onEnemyHit = (position, amount) =>
+            // موضع الرقم فوق رأس الهدف: الجندي +1.6، البوس (ضعف الطول) +3.8
+            System.Action<Vector3, float> onEnemyHit = (numberSpawnPosition, amount) =>
             {
                 var state = Player.Brain.CurrentState;
                 bool heavy = state == PlayerStateId.AttackHeavy || state == PlayerStateId.Skill;
                 HitStop.Request(heavy ? 0.09f : 0.06f);
                 if (heavy && rig != null)
                     rig.Shake.Shake(0.15f, 0.25f);
-                Feel.DamageNumber.Spawn(position + Vector3.up * 1.6f, amount);
+                Feel.DamageNumber.Spawn(numberSpawnPosition, amount);
             };
             foreach (var enemy in AllEnemies)
                 if (enemy != null)
                 {
                     var self = enemy; // التقاط النسخة لا متغير الحلقة
                     self.Damageable.Damaged += packet =>
-                        onEnemyHit(self.transform.position, packet.HealthDamage);
+                        onEnemyHit(self.transform.position + Vector3.up * 1.6f, packet.HealthDamage);
                 }
             if (Boss != null)
             {
                 Boss.Damageable.Damaged += packet =>
-                    onEnemyHit(Boss.transform.position, packet.HealthDamage);
+                    onEnemyHit(Boss.transform.position + Vector3.up * 3.8f, packet.HealthDamage);
                 Boss.SlamLanded += () => rig?.Shake.Shake(0.35f, 0.4f);
             }
             Loop.fadeOverlay = UI.HudBuilder.BuildFadeOverlay();

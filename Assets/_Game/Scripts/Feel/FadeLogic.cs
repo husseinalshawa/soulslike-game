@@ -11,6 +11,14 @@ namespace SoulsGame.Feel
         public float Alpha { get; private set; }
         public bool Done => Mathf.Approximately(Alpha, target) || speed <= 0f;
 
+        // ضبط فوري لنقطة انطلاق (غطاء يبدأ معتماً مثلاً) قبل أي FadeTo.
+        public void Reset(float alpha)
+        {
+            Alpha = Mathf.Clamp01(alpha);
+            target = Alpha;
+            speed = 0f;
+        }
+
         public void FadeTo(float targetAlpha, float duration)
         {
             target = Mathf.Clamp01(targetAlpha);

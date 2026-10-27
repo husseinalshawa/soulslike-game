@@ -23,6 +23,8 @@ namespace SoulsGame.UI
 
         public bool IsOpen => !Logic.Started;
 
+        private void Awake() => Fade.Reset(1f); // الغطاء معتم منذ الولادة
+
         public void AdjustSensitivity(int direction)
         {
             Logic.AdjustSensitivity(direction);

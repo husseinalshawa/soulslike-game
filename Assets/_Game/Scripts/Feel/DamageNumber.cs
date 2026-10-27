@@ -20,8 +20,12 @@ namespace SoulsGame.Feel
             return (RiseDistance * k, 1f - k);
         }
 
+        // آخر موضع ولادة — للاختبارات (ارتفاع الرقم فوق رأس الهدف)
+        public static Vector3 LastSpawnPosition { get; private set; }
+
         public static DamageNumber Spawn(Vector3 position, float amount)
         {
+            LastSpawnPosition = position;
             var go = new GameObject("DamageNumber");
             go.transform.position = position;
             var text = go.AddComponent<TextMesh>();
@@ -30,6 +34,17 @@ namespace SoulsGame.Feel
             text.characterSize = 0.08f;
             text.anchor = TextAnchor.MiddleCenter;
             text.color = Color.white;
+            // TextMesh بلا خط ومادته لا يرسم شيئاً في Unity — الإغفال الكلاسيكي
+            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (font != null)
+            {
+                text.font = font;
+                // Unity يضيف MeshRenderer مع TextMesh تلقائياً؛ الشيم لا — نضمن وجوده
+                var meshRenderer = go.GetComponent<MeshRenderer>();
+                if (meshRenderer == null)
+                    meshRenderer = go.AddComponent<MeshRenderer>();
+                meshRenderer.material = font.material;
+            }
             var number = go.AddComponent<DamageNumber>();
             number.label = text;
             number.origin = position;

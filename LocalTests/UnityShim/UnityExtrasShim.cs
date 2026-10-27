@@ -34,6 +34,7 @@ namespace UnityEngine
         public int fontSize;
         public float characterSize;
         public TextAnchor anchor;
+        public Font font;
     }
 
     public class Shader : Object
