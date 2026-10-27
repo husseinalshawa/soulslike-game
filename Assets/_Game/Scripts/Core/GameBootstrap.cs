@@ -31,7 +31,9 @@ namespace SoulsGame.Core
         public PlayerAvatar Player { get; private set; }
         public EnemyAvatar Enemy { get; private set; }
         public EnemyAvatar Enemy2 { get; private set; }
+        public EnemyAvatar[] AllEnemies { get; private set; }
         public BossAvatar Boss { get; private set; }
+        public SoulsCache Cache { get; private set; }
         public GameLoop Loop { get; private set; }
 
         private void Awake()
@@ -85,8 +87,71 @@ namespace SoulsGame.Core
                 WorldBuilder.OnGround(-5f, 5f, 1.1f), WorldBuilder.OnGround(5f, 5f, 1.1f));
             Enemy2 = BuildEnemy(WorldBuilder.OnGround(-4f, 11f, 1.1f),
                 WorldBuilder.OnGround(-7f, 11f, 1.1f), WorldBuilder.OnGround(-1f, 11f, 1.1f));
+
+            // المعسكران (جنديان لكل معسكر حول نار مخيم) وعدوا الكهف
+            var camp1 = BuildCamp(Camp1Center);
+            var camp2 = BuildCamp(Camp2Center);
+            var caveEnemies = BuildCaveEnemies();
+            AllEnemies = new[]
+            {
+                Enemy, Enemy2,
+                camp1[0], camp1[1], camp2[0], camp2[1],
+                caveEnemies[0], caveEnemies[1]
+            };
+
             BuildHudAndGameLoop();
             BuildBossArea(fy);
+            BuildSoulsCache();
+        }
+
+        private EnemyAvatar[] BuildCamp(Vector3 center)
+        {
+            // نار المخيم: صندوق متوهج يحدد الموقع من بعيد
+            var fire = CreateBox("Campfire", WorldBuilder.OnGround(center.x, center.z, 0.3f),
+                new Vector3(0.8f, 0.6f, 0.8f), new Color(0.9f, 0.45f, 0.15f));
+            var fireCollider = fire.GetComponent<Collider>();
+            if (fireCollider != null) fireCollider.enabled = false;
+
+            return new[]
+            {
+                BuildEnemy(WorldBuilder.OnGround(center.x - 3f, center.z, 1.1f),
+                    WorldBuilder.OnGround(center.x - 5f, center.z - 2f, 1.1f),
+                    WorldBuilder.OnGround(center.x - 1f, center.z + 2f, 1.1f)),
+                BuildEnemy(WorldBuilder.OnGround(center.x + 3f, center.z, 1.1f),
+                    WorldBuilder.OnGround(center.x + 5f, center.z + 2f, 1.1f),
+                    WorldBuilder.OnGround(center.x + 1f, center.z - 2f, 1.1f))
+            };
+        }
+
+        private EnemyAvatar[] BuildCaveEnemies()
+        {
+            Vector3 room = WorldBuilder.CaveRoomCenter;
+            float floorY = WorldHeightmap.GetHeight(
+                WorldHeightmap.CaveMouthCenter.x, WorldHeightmap.CaveMouthCenter.z);
+            return new[]
+            {
+                BuildEnemy(new Vector3(room.x - 2f, floorY + 1.1f, room.z + 2f),
+                    new Vector3(room.x - 4f, floorY + 1.1f, room.z), new Vector3(room.x, floorY + 1.1f, room.z + 4f)),
+                BuildEnemy(new Vector3(room.x + 2f, floorY + 1.1f, room.z - 2f),
+                    new Vector3(room.x + 4f, floorY + 1.1f, room.z), new Vector3(room.x, floorY + 1.1f, room.z - 4f))
+            };
+        }
+
+        private void BuildSoulsCache()
+        {
+            Vector3 room = WorldBuilder.CaveRoomCenter;
+            float floorY = WorldHeightmap.GetHeight(
+                WorldHeightmap.CaveMouthCenter.x, WorldHeightmap.CaveMouthCenter.z);
+            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            go.name = "SoulsCache";
+            go.transform.position = new Vector3(room.x - 5f, floorY + 0.8f, room.z);
+            go.transform.localScale = new Vector3(0.5f, 0.8f, 0.5f);
+            Tint(go, new Color(0.6f, 0.95f, 0.75f));
+            var cacheCollider = go.GetComponent<Collider>();
+            if (cacheCollider != null) cacheCollider.enabled = false;
+
+            Cache = go.AddComponent<SoulsCache>();
+            Loop.cache = Cache;
         }
 
         private void BuildHudAndGameLoop()
@@ -95,7 +160,7 @@ namespace SoulsGame.Core
             UI.HudBuilder.BuildEnemyBar(Enemy, Player.lockOn);
 
             Loop = gameObject.AddComponent<GameLoop>();
-            Loop.Initialize(Player, new[] { Enemy, Enemy2 }, deathScreen);
+            Loop.Initialize(Player, AllEnemies, deathScreen);
             Loop.toast = UI.HudBuilder.BuildToast(Player);
             Loop.levelUpMenu = UI.HudBuilder.BuildLevelUpMenu(Player);
 
@@ -104,14 +169,20 @@ namespace SoulsGame.Core
 
         private void BuildGraceSites()
         {
-            // الموقع 0 (مكتشف) أضافته Initialize عند نقطة البداية؛ الموقع 1 أمام بوابة البوس
-            var bossGatePosition = WorldBuilder.OnGround(3f, 16f, 0f);
-            Loop.Graces.AddSite(1, bossGatePosition, discovered: false);
+            // الموقع 0 (مكتشف) أضافته Initialize عند نقطة البداية (بوابة الحصن)؛
+            // 1 منتصف المرج؛ 2 فم الكهف
+            var midGrace = WorldBuilder.OnGround(WorldHeightmap.MidGraceCenter.x,
+                WorldHeightmap.MidGraceCenter.z, 0f);
+            var caveGrace = WorldBuilder.OnGround(WorldHeightmap.CaveMouthCenter.x,
+                WorldHeightmap.CaveMouthCenter.z, 0f);
+            Loop.Graces.AddSite(1, midGrace, discovered: false);
+            Loop.Graces.AddSite(2, caveGrace, discovered: false);
 
             Loop.graceMarkers = new[]
             {
                 BuildGraceMarker(0, Player.transform.position, lit: true),
-                BuildGraceMarker(1, bossGatePosition, lit: false)
+                BuildGraceMarker(1, midGrace, lit: false),
+                BuildGraceMarker(2, caveGrace, lit: false)
             };
         }
 

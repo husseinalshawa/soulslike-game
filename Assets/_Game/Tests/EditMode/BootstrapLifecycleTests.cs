@@ -45,7 +45,7 @@ namespace SoulsGame.Tests
             var bootstrap = go.AddComponent<GameBootstrap>();
 
             Assert.IsNotNull(bootstrap.Loop, "GameLoop مكشوف من البناء");
-            Assert.AreEqual(2, bootstrap.Loop.Graces.SiteCount, "موقعا راحة مبنيان");
+            Assert.AreEqual(3, bootstrap.Loop.Graces.SiteCount, "ثلاثة مواقع راحة (مرحلة 3)");
 
             var player = bootstrap.Player;
             Assert.IsNotNull(player.Progression, "تقدم اللاعب تهيأ");
@@ -92,6 +92,22 @@ namespace SoulsGame.Tests
             Vector3 e = bootstrap.Enemy.transform.position;
             Assert.GreaterOrEqual(e.y, World.WorldHeightmap.GetHeight(e.x, e.z) - 0.01f,
                 "العدو فوق التضاريس");
+        }
+
+        [Test]
+        public void MeadowContent_GracesEnemiesAndCache()
+        {
+            var go = new GameObject("Bootstrap");
+            var bootstrap = go.AddComponent<GameBootstrap>();
+
+            Assert.AreEqual(3, bootstrap.Loop.Graces.SiteCount,
+                "ثلاثة مواقع: بوابة الحصن، منتصف المرج، فم الكهف");
+            Assert.AreEqual(8, bootstrap.AllEnemies.Length,
+                "8 جنود: 2 حصن + 2×2 معسكران + 2 كهف");
+
+            Vector3 cachePos = bootstrap.Cache.transform.position;
+            Assert.AreEqual(800, bootstrap.Cache.TryCollect(cachePos), "الكنز يمنح 800");
+            Assert.AreEqual(0, bootstrap.Cache.TryCollect(cachePos), "مرة واحدة فقط");
         }
 
         [Test]

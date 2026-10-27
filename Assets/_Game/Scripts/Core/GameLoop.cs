@@ -2,6 +2,7 @@ using SoulsGame.Enemies;
 using SoulsGame.Player;
 using SoulsGame.Progression;
 using SoulsGame.UI;
+using SoulsGame.World;
 using UnityEngine;
 
 namespace SoulsGame.Core
@@ -20,6 +21,7 @@ namespace SoulsGame.Core
         public GraceSiteMarker[] graceMarkers;
         public BossAvatar boss;
         public FogGate fogGate;
+        public SoulsCache cache;
 
         public BloodstainLedger Ledger { get; } = new BloodstainLedger();
         public GraceSystem Graces { get; } = new GraceSystem();
@@ -89,6 +91,16 @@ namespace SoulsGame.Core
                 player.Wallet.Add(recovered);
                 toast?.Show($"Recovered {recovered} souls");
                 RefreshStainMarker();
+            }
+
+            if (cache != null)
+            {
+                int cacheSouls = cache.TryCollect(player.transform.position);
+                if (cacheSouls > 0)
+                {
+                    player.Wallet.Add(cacheSouls);
+                    toast?.Show($"Found {cacheSouls} souls");
+                }
             }
 
             int discovered = Graces.TryDiscover(player.transform.position);
