@@ -34,7 +34,10 @@ namespace SoulsGame.Combat
             if (delayRemaining > 0f)
             {
                 delayRemaining -= deltaTime;
-                return;
+                if (delayRemaining >= 0f)
+                    return;
+                deltaTime = -delayRemaining; // باقي الإطار بعد انتهاء المهلة يتجدد
+                delayRemaining = 0f;
             }
             Current = Math.Min(Max, Current + RegenPerSecond * deltaTime);
         }
