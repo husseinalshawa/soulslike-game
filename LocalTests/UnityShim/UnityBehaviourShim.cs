@@ -51,6 +51,8 @@ namespace UnityEngine
     {
         public static float deltaTime => 0f;
         public static float time => 0f;
+        public static float unscaledDeltaTime => 0f;
+        public static float timeScale = 1f;
     }
 
     public static class Debug

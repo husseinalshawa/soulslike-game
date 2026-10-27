@@ -54,6 +54,7 @@ namespace SoulsGame.Core
         public GameLoop Loop { get; private set; }
         public Story.KeyItemPickup BellPickup { get; private set; }
         public ThemeShift ActiveThemeShift { get; private set; }
+        public Feel.HitStopLogic HitStop { get; } = new Feel.HitStopLogic();
 
         private UI.Toast victoryBanner;
         private WorldTheme workingTheme;
@@ -157,6 +158,31 @@ namespace SoulsGame.Core
             BuildHorse();
             BuildGearPickups();
             BuildChapelAndStory();
+            WireFeel();
+        }
+
+        // ربط الإحساس: hit-stop حسب حالة عقل اللاعب، واهتزازات الكاميرا.
+        private void WireFeel()
+        {
+            var rig = Player.cameraRig;
+            System.Action onEnemyHit = () =>
+            {
+                var state = Player.Brain.CurrentState;
+                bool heavy = state == PlayerStateId.AttackHeavy || state == PlayerStateId.Skill;
+                HitStop.Request(heavy ? 0.09f : 0.06f);
+                if (heavy && rig != null)
+                    rig.Shake.Shake(0.15f, 0.25f);
+            };
+            foreach (var enemy in AllEnemies)
+                if (enemy != null)
+                    enemy.Damageable.Damaged += _ => onEnemyHit();
+            if (Boss != null)
+            {
+                Boss.Damageable.Damaged += _ => onEnemyHit();
+                Boss.SlamLanded += () => rig?.Shake.Shake(0.35f, 0.4f);
+            }
+            Player.Damageable.Damaged += _ => HitStop.Request(0.05f);
+            Player.Brain.GuardBroken += () => rig?.Shake.Shake(0.25f, 0.3f);
         }
 
         // الكنيسة الغارقة والقصة: البناء، موقع الراحة الرابع، الماء الضحل،
@@ -265,6 +291,10 @@ namespace SoulsGame.Core
 
         private void Update()
         {
+            // hit-stop يُدار بزمن غير مقيس كي لا يجمد نفسه
+            HitStop.Tick(Time.unscaledDeltaTime);
+            Time.timeScale = HitStop.CurrentScale;
+
             if (ActiveThemeShift == null)
                 return;
             ActiveThemeShift.Tick(Time.deltaTime);

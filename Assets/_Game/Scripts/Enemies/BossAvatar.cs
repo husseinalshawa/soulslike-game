@@ -28,6 +28,7 @@ namespace SoulsGame.Enemies
             Brain.CurrentState != BossStateId.Dormant && Brain.CurrentState != BossStateId.Dead;
 
         public event Action Defeated;
+        public event Action SlamLanded; // الأرضية الدائرية أصابت فعلاً — اهتزاز كبير
 
         private CharacterController controller;
         private Vector3 spawnPosition;
@@ -50,6 +51,13 @@ namespace SoulsGame.Enemies
 
             Damageable.PoiseBroken += () => Brain.NotifyPoiseBroken();
             Damageable.Died += OnDied;
+
+            var flash = gameObject.AddComponent<Feel.HitFlash>();
+            var bossRenderer = GetComponent<Renderer>();
+            flash.target = bossRenderer;
+            flash.baseColor = bossRenderer != null ? bossRenderer.material.color : Color.white;
+            flash.owner = Damageable;
+            Damageable.Damaged += _ => flash.Begin();
         }
 
         private (float damage, float poise) PacketFor(BossAttack attack) => attack switch
@@ -70,7 +78,12 @@ namespace SoulsGame.Enemies
                 // فتحترم i-frames والصد ككل ضربة أخرى
                 if (playerDamageable != null && player != null &&
                     Vector3.Distance(transform.position, player.position) <= SlamRadius)
+                {
+                    float before = playerDamageable.Health.Current;
                     playerDamageable.ApplyDamage(packet);
+                    if (playerDamageable.Health.Current < before)
+                        SlamLanded?.Invoke();
+                }
                 return;
             }
 

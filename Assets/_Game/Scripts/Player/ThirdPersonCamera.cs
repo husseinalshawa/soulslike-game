@@ -19,6 +19,9 @@ namespace SoulsGame.Player
         public Transform followTarget;
         public LockOnSystem lockOn;
 
+        // اهتزاز الإصابات الثقيلة/كسر الحرس/أرضية البوس — حتمي ومختبَر
+        public Feel.ShakeLogic Shake { get; } = new Feel.ShakeLogic();
+
         // يغذيهما PlayerAvatar كل إطار من إدخال النظرة.
         public Vector2 MouseLook { get; set; }
         public Vector2 StickLook { get; set; }
@@ -49,7 +52,8 @@ namespace SoulsGame.Player
 
             Quaternion orbit = Quaternion.Euler(pitch, yaw, 0f);
             Vector3 aimPoint = followTarget.position + Vector3.up * AimHeight;
-            transform.position = aimPoint - orbit * Vector3.forward * Distance + Vector3.up * (Height - AimHeight);
+            transform.position = aimPoint - orbit * Vector3.forward * Distance + Vector3.up * (Height - AimHeight)
+                + Shake.Tick(Time.deltaTime);
             transform.rotation = Quaternion.LookRotation(aimPoint - transform.position, Vector3.up);
         }
     }

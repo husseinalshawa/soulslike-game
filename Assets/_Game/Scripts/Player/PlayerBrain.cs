@@ -51,6 +51,7 @@ namespace SoulsGame.Player
         public event Action HitboxClose;
         public event Action<bool> InvulnerabilityChanged;
         public event Action StaminaRejected;
+        public event Action GuardBroken; // صد بلا ستامينا كافية — اهتزاز الكاميرا يستهلكه
         public event Action FocusRejected;
         public event Action<SpellData> SpellReleased;
         public event Action SkillWindowOpen;
@@ -244,6 +245,7 @@ namespace SoulsGame.Player
                 return true;
 
             Enter(PlayerStateId.Stagger); // كسر الحرس
+            GuardBroken?.Invoke();
             return false;
         }
 
