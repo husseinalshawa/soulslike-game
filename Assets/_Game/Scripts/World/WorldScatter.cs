@@ -75,6 +75,14 @@ namespace SoulsGame.World
                 if (dx * dx + dz * dz < MinSpacing * MinSpacing)
                     return false;
             }
+            // مستنقع الكنيسة جزء من العالم نفسه (كالتضاريس): مقصى دائماً
+            {
+                float mdx = x - WorldHeightmap.MarshCenter.x;
+                float mdz = z - WorldHeightmap.MarshCenter.z;
+                float marshLimit = WorldHeightmap.MarshRadius + 4f;
+                if (mdx * mdx + mdz * mdz <= marshLimit * marshLimit)
+                    return false;
+            }
             // تجنب الميول الحادة: فرق ارتفاع الجوار القريب محدود
             float h = WorldHeightmap.GetHeight(x, z);
             float hx = WorldHeightmap.GetHeight(x + 2f, z);

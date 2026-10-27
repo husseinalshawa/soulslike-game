@@ -22,6 +22,10 @@ namespace SoulsGame.Core
         public CharacterStats bossStats;
         public WorldTheme worldTheme;
 
+        [Tooltip("المرتّلون الغارقون (المرحلة 5): أبطأ وأقسى من الجنود")]
+        public CharacterStats chanterStats;
+        public WeaponData chanterWeapon;
+
         [Tooltip("عتاد المرحلة 4: أصول من المشروع تصل للعالم كما هي — الفارغ يُبنى من GearLibrary")]
         public WeaponData greatswordData;
         public WeaponData twinDaggersData;
@@ -48,6 +52,11 @@ namespace SoulsGame.Core
         public SoulsCache Cache { get; private set; }
         public GearPickup[] Pickups { get; private set; }
         public GameLoop Loop { get; private set; }
+        public Story.KeyItemPickup BellPickup { get; private set; }
+        public ThemeShift ActiveThemeShift { get; private set; }
+
+        private UI.Toast victoryBanner;
+        private WorldTheme workingTheme;
 
         private void Awake()
         {
@@ -79,6 +88,23 @@ namespace SoulsGame.Core
             }
 
             if (worldTheme == null) worldTheme = ScriptableObject.CreateInstance<WorldTheme>();
+
+            if (chanterStats == null)
+            {
+                chanterStats = ScriptableObject.CreateInstance<CharacterStats>();
+                chanterStats.maxHealth = 200f;
+                chanterStats.maxPoise = 40f;
+                chanterStats.runSpeed = 2.5f;
+                chanterStats.soulsReward = 150;
+            }
+            if (chanterWeapon == null)
+            {
+                chanterWeapon = ScriptableObject.CreateInstance<WeaponData>();
+                chanterWeapon.lightDamage = 30f;
+                chanterWeapon.lightPoiseDamage = 30f;
+                chanterWeapon.lightStaminaCost = 0f;
+                chanterWeapon.light = new AttackTimeline(0.8f, 0.3f, 1.2f, 1.2f);
+            }
 
             // عتاد المرحلة 4: الأصل المسند من المشهد أولاً، وإلا مكتبة الأرقام المختبرة
             if (greatswordData == null) greatswordData = GearLibrary.Greatsword();
@@ -116,11 +142,13 @@ namespace SoulsGame.Core
             var camp1 = BuildCamp(Camp1Center);
             var camp2 = BuildCamp(Camp2Center);
             var caveEnemies = BuildCaveEnemies();
+            var chanters = BuildChanters();
             AllEnemies = new[]
             {
                 Enemy, Enemy2,
                 camp1[0], camp1[1], camp2[0], camp2[1],
-                caveEnemies[0], caveEnemies[1]
+                caveEnemies[0], caveEnemies[1],
+                chanters[0], chanters[1], chanters[2]
             };
 
             BuildHudAndGameLoop();
@@ -128,6 +156,145 @@ namespace SoulsGame.Core
             BuildSoulsCache();
             BuildHorse();
             BuildGearPickups();
+            BuildChapelAndStory();
+        }
+
+        // الكنيسة الغارقة والقصة: البناء، موقع الراحة الرابع، الماء الضحل،
+        // الشخصيات الثلاث، الجرس، المذبح، وربط الأعلام وتحول اللون.
+        private void BuildChapelAndStory()
+        {
+            var parent = new GameObject("SunkenChapel");
+            var chapel = WorldBuilder.BuildChapel(parent.transform, worldTheme);
+
+            // موقع الراحة الرابع (site 3) على أرض جافة قبالة المستنقع من الجنوب-الغرب
+            // (خارج الحوض ومنطقة دمجه ومربع سطح الماء — لا راحة غارقة)
+            var chapelGrace = WorldBuilder.OnGround(80f, 40f, 1.1f);
+            Loop.Graces.AddSite(3, chapelGrace, discovered: false);
+            Loop.graceMarkers = new[]
+            {
+                Loop.graceMarkers[0], Loop.graceMarkers[1], Loop.graceMarkers[2],
+                BuildGraceMarker(3, chapelGrace - Vector3.up * 1.1f, lit: false)
+            };
+
+            // الماء الضحل يبطئ اللاعب، والحصان ممنوع في المستنقع
+            Player.marsh = new MarshZone(WorldHeightmap.MarshCenter, WorldHeightmap.MarshRadius);
+            Player.mountForbiddenZones.Add(new ForbiddenZone
+            {
+                Center = WorldHeightmap.MarshCenter,
+                Radius = WorldHeightmap.MarshRadius
+            });
+
+            // الشخصيات الثلاث — ألوان مميزة، لا Damageable ولا lock-on
+            float fy = WorldHeightmap.FortPlateauHeight;
+            var mara = BuildNpc(Story.StoryLibrary.Mara(),
+                WorldBuilder.OnGround(4f, -96f, 1.1f), new Color(0.75f, 0.55f, 0.3f));
+            var valion = BuildNpc(Story.StoryLibrary.Valion(),
+                new Vector3(8.5f, fy + 1.1f, 17f), new Color(0.5f, 0.55f, 0.65f));
+            var sila = BuildNpc(Story.StoryLibrary.Sila(),
+                WorldBuilder.OnGround(-40f, -70f, 1.1f), new Color(0.8f, 0.78f, 0.7f));
+            // شجرة سيلا الميتة — معلم بصري يلتقطه البصر من بعيد
+            CreateBox("SilaTree", WorldBuilder.OnGround(-41.5f, -70f, 2.5f),
+                new Vector3(0.5f, 5f, 0.5f), worldTheme.deadTreeColor);
+            Loop.npcs = new[] { mara, valion, sila };
+
+            // الجرس الصدئ في غرفة كنز الكهف
+            float caveFloorY = WorldHeightmap.GetHeight(
+                WorldHeightmap.CaveMouthCenter.x, WorldHeightmap.CaveMouthCenter.z);
+            var bellGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            bellGo.name = "Pickup_RustedBell";
+            bellGo.transform.position = new Vector3(
+                WorldBuilder.CaveRoomCenter.x - 2f, caveFloorY + 0.6f, WorldBuilder.CaveRoomCenter.z - 2f);
+            bellGo.transform.localScale = new Vector3(0.4f, 0.4f, 0.4f);
+            Tint(bellGo, new Color(0.65f, 0.6f, 0.45f));
+            var bellCollider = bellGo.GetComponent<Collider>();
+            if (bellCollider != null) bellCollider.enabled = false;
+            BellPickup = bellGo.AddComponent<Story.KeyItemPickup>();
+            BellPickup.itemName = Story.StoryLibrary.RustedBell;
+            BellPickup.description = Story.StoryLibrary.RustedBellDescription;
+            BellPickup.flagOnCollect = Story.StoryFlag.BellFound;
+            BellPickup.player = Player;
+            BellPickup.story = Loop.Story;
+            BellPickup.toast = Loop.toast;
+
+            // المذبح والواجهة والأعلام
+            Loop.altarPosition = chapel.AltarPosition;
+            Loop.dialoguePanel = UI.HudBuilder.BuildDialoguePanel();
+            Loop.banner = victoryBanner;
+            Boss.Defeated += () => Loop.Story.Set(Story.StoryFlag.BossDefeated);
+            Loop.Story.FlagChanged += flag =>
+            {
+                if (flag == Story.StoryFlag.AshPlaced)
+                    StartThemeShift();
+            };
+        }
+
+        private Story.NpcAvatar BuildNpc(Story.NpcQuestline questline, Vector3 position, Color tint)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            go.name = $"Npc_{questline.NpcName}";
+            go.transform.position = position;
+            Tint(go, tint);
+            // جسد صلب يقف في مكانه — لا Damageable ولا Hurtbox: لا يُقتل ولا يُستهدف
+            var npc = go.AddComponent<Story.NpcAvatar>();
+            npc.Questline = questline;
+            return npc;
+        }
+
+        // الخاتمة: المرج يستعيد مسحة لون — تحول 8 ثوانٍ نحو سماء أدفأ وضباب أخف
+        private void StartThemeShift()
+        {
+            var warm = ScriptableObject.CreateInstance<WorldTheme>();
+            warm.sunColor = new Color(1f, 0.93f, 0.78f);
+            warm.sunIntensity = 1.15f;
+            warm.sunPitchDegrees = worldTheme.sunPitchDegrees;
+            warm.sunYawDegrees = worldTheme.sunYawDegrees;
+            warm.fogColor = new Color(0.8f, 0.8f, 0.7f);
+            warm.fogDensity = 0.0045f;
+            warm.ambient = new Color(0.52f, 0.52f, 0.46f);
+            warm.skyColor = new Color(0.72f, 0.78f, 0.66f);
+            warm.grassColor = new Color(0.38f, 0.48f, 0.28f);
+            warm.highGroundColor = worldTheme.highGroundColor;
+            warm.rockColor = worldTheme.rockColor;
+            warm.deadTreeColor = worldTheme.deadTreeColor;
+            warm.ruinColor = worldTheme.ruinColor;
+            warm.caveColor = worldTheme.caveColor;
+
+            workingTheme = ScriptableObject.CreateInstance<WorldTheme>();
+            ActiveThemeShift = new ThemeShift(worldTheme, warm, 8f);
+        }
+
+        private void Update()
+        {
+            if (ActiveThemeShift == null)
+                return;
+            ActiveThemeShift.Tick(Time.deltaTime);
+            var blended = ActiveThemeShift.Blend(workingTheme);
+            WorldBuilder.ApplyTheme(blended);
+            var camera = Camera.main;
+            if (camera != null)
+                camera.backgroundColor = blended.skyColor;
+            if (ActiveThemeShift.Done)
+                ActiveThemeShift = null; // اكتمل — السمة الدافئة مطبقة
+        }
+
+        // المرتّلون الغارقون الثلاثة: داخل المستنقع حول الكنيسة، بلون غارق
+        private EnemyAvatar[] BuildChanters()
+        {
+            var tint = new Color(0.32f, 0.45f, 0.42f);
+            // مواقعهم داخل مستطيل أرضية الكنيسة الحجرية (سمكها 0.3) —
+            // الإزاحة 1.4 = 0.3 بلاطة + 1.1 نصف الجسم، كي لا يولدوا داخلها
+            return new[]
+            {
+                BuildEnemy(WorldBuilder.OnGround(112f, 70f, 1.4f),
+                    WorldBuilder.OnGround(110f, 68f, 1.4f), WorldBuilder.OnGround(114f, 72f, 1.4f),
+                    chanterStats, chanterWeapon, tint),
+                BuildEnemy(WorldBuilder.OnGround(128f, 72f, 1.4f),
+                    WorldBuilder.OnGround(126f, 70f, 1.4f), WorldBuilder.OnGround(130f, 74f, 1.4f),
+                    chanterStats, chanterWeapon, tint),
+                BuildEnemy(WorldBuilder.OnGround(120f, 94f, 1.4f),
+                    WorldBuilder.OnGround(118f, 93f, 1.4f), WorldBuilder.OnGround(122f, 95f, 1.4f),
+                    chanterStats, chanterWeapon, tint)
+            };
         }
 
         private void BuildGearPickups()
@@ -326,7 +493,7 @@ namespace SoulsGame.Core
             Loop.boss = Boss;
             Loop.fogGate = gate;
 
-            var banner = UI.HudBuilder.BuildBanner();
+            victoryBanner = UI.HudBuilder.BuildBanner();
             UI.HudBuilder.BuildBossBar(Boss);
             Boss.Defeated += () =>
             {
@@ -335,8 +502,8 @@ namespace SoulsGame.Core
                 // الضباب يختفي مع النصر (المواصفة §5)
                 var fogRenderer = fogVisual.GetComponent<Renderer>();
                 if (fogRenderer != null) fogRenderer.enabled = false;
-                if (banner != null)
-                    banner.Show("GREAT ENEMY FELLED");
+                if (victoryBanner != null)
+                    victoryBanner.Show("GREAT ENEMY FELLED");
             };
         }
 
@@ -406,12 +573,18 @@ namespace SoulsGame.Core
             return marker;
         }
 
-        private EnemyAvatar BuildEnemy(Vector3 position, Vector3 patrolA, Vector3 patrolB)
+        private EnemyAvatar BuildEnemy(Vector3 position, Vector3 patrolA, Vector3 patrolB,
+            CharacterStats statsOverride = null, WeaponData weaponOverride = null,
+            Color? tintOverride = null)
         {
+            var stats = statsOverride != null ? statsOverride : enemyStats;
+            var weaponData = weaponOverride != null ? weaponOverride : enemyWeapon;
+            Color tint = tintOverride ?? new Color(0.6f, 0.2f, 0.2f);
+
             var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            go.name = "EnemyMelee";
+            go.name = statsOverride != null ? "DrownedChanter" : "EnemyMelee";
             go.transform.position = position;
-            Tint(go, new Color(0.6f, 0.2f, 0.2f));
+            Tint(go, tint);
 
             go.SetActive(false); // نفس نمط اللاعب: اربط ثم فعّل
 
@@ -424,7 +597,7 @@ namespace SoulsGame.Core
             controller.center = Vector3.zero;
 
             var damageable = go.AddComponent<Damageable>();
-            damageable.stats = enemyStats;
+            damageable.stats = stats;
 
             var hurtboxGo = new GameObject("Hurtbox");
             hurtboxGo.transform.SetParent(go.transform, false);
@@ -449,15 +622,16 @@ namespace SoulsGame.Core
             hitbox.ignoreOwner = damageable;
 
             var enemy = go.AddComponent<EnemyAvatar>();
-            enemy.stats = enemyStats;
-            enemy.weapon = enemyWeapon;
+            enemy.stats = stats;
+            enemy.weapon = weaponData;
             enemy.weaponHitbox = hitbox;
             enemy.player = Player.transform;
             enemy.patrolA = patrolA;
             enemy.patrolB = patrolB;
+            enemy.baseTint = tint;
 
             go.SetActive(true);
-            enemy.Damageable.Died += () => Player.Wallet.Add(enemyStats.soulsReward);
+            enemy.Damageable.Died += () => Player.Wallet.Add(stats.soulsReward);
             return enemy;
         }
 
@@ -523,6 +697,9 @@ namespace SoulsGame.Core
             controller.height = 2f;
             controller.radius = 0.4f;
             controller.center = Vector3.zero;
+            // حافة أرضية الكنيسة 0.3م تساوي stepOffset الافتراضي بالضبط —
+            // قيمة صريحة أعلى تضمن الصعود (وإلا صار المذبح/الخاتمة بلا طريق)
+            controller.stepOffset = 0.5f;
 
             var damageable = go.AddComponent<Damageable>();
             damageable.stats = playerStats;

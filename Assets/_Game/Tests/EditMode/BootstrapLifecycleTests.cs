@@ -45,7 +45,7 @@ namespace SoulsGame.Tests
             var bootstrap = go.AddComponent<GameBootstrap>();
 
             Assert.IsNotNull(bootstrap.Loop, "GameLoop مكشوف من البناء");
-            Assert.AreEqual(3, bootstrap.Loop.Graces.SiteCount, "ثلاثة مواقع راحة (مرحلة 3)");
+            Assert.AreEqual(4, bootstrap.Loop.Graces.SiteCount, "أربعة مواقع راحة (مرحلة 5: + الكنيسة)");
 
             var player = bootstrap.Player;
             Assert.IsNotNull(player.Progression, "تقدم اللاعب تهيأ");
@@ -100,13 +100,13 @@ namespace SoulsGame.Tests
             var go = new GameObject("Bootstrap");
             var bootstrap = go.AddComponent<GameBootstrap>();
 
-            Assert.AreEqual(3, bootstrap.Loop.Graces.SiteCount,
-                "ثلاثة مواقع: بوابة الحصن، منتصف المرج، فم الكهف");
-            Assert.AreEqual(8, bootstrap.AllEnemies.Length,
-                "8 جنود: 2 حصن + 2×2 معسكران + 2 كهف");
+            Assert.AreEqual(4, bootstrap.Loop.Graces.SiteCount,
+                "أربعة مواقع: بوابة الحصن، منتصف المرج، فم الكهف، الكنيسة");
+            Assert.AreEqual(11, bootstrap.AllEnemies.Length,
+                "11: 2 حصن + 2×2 معسكران + 2 كهف + 3 مرتّلون");
 
             // كل مواقع الراحة مواضع إحياء فوق الأرض لا داخلها (مركز اللاعب +1.1)
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 4; i++)
             {
                 Vector3 site = bootstrap.Loop.Graces.PositionOf(i);
                 Assert.GreaterOrEqual(site.y,

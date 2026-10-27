@@ -114,6 +114,40 @@ namespace SoulsGame.UI
             return menu;
         }
 
+        // شريط الحوار أسفل الشاشة: اسم ذهبي + سطر + تلميح E.
+        public static DialoguePanel BuildDialoguePanel()
+        {
+            var canvas = GameObject.Find("HUD");
+            if (canvas == null) return null;
+
+            var background = CreateImage(canvas.transform, "DialoguePanel",
+                new Color(0.04f, 0.04f, 0.07f, 0.88f));
+            var rect = background.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, 95f);
+            rect.sizeDelta = new Vector2(820f, 110f);
+
+            var speaker = MakeLabel(background.transform, new Vector2(-230f, 32f), 18);
+            speaker.color = new Color(0.85f, 0.7f, 0.25f); // اسم ذهبي
+            var line = MakeLabel(background.transform, new Vector2(0f, -6f), 18);
+            var lineRect = line.GetComponent<RectTransform>();
+            lineRect.sizeDelta = new Vector2(760f, 60f);
+            var hint = MakeLabel(background.transform, new Vector2(340f, -38f), 14);
+            hint.text = "E ▸";
+            hint.alignment = TextAnchor.MiddleRight;
+
+            var holderGo = new GameObject("DialoguePanelController");
+            holderGo.transform.SetParent(canvas.transform, false);
+            var dialoguePanel = holderGo.AddComponent<DialoguePanel>();
+            dialoguePanel.panel = background.gameObject;
+            dialoguePanel.speakerLabel = speaker;
+            dialoguePanel.lineLabel = line;
+            background.gameObject.SetActive(false);
+            return dialoguePanel;
+        }
+
         // لافتة النصر الكبيرة (GREAT ENEMY FELLED) — Toast بخط ضخم ذهبي.
         public static Toast BuildBanner()
         {

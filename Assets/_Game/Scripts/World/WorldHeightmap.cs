@@ -22,6 +22,13 @@ namespace SoulsGame.World
         public static readonly Vector3 CaveMouthCenter = new Vector3(-140f, 0f, 20f);
         public const float SmallPlateauRadius = 8f;
 
+        // مستنقع الكنيسة الغارقة: حوض مسطح غائر شمال-شرق المرج
+        public static readonly Vector3 MarshCenter = new Vector3(120f, 0f, 80f);
+        public const float MarshRadius = 35f;
+        public const float MarshDepth = 1.2f;
+        public static float MarshFloorY => BaseHeightAt(MarshCenter.x, MarshCenter.z) - MarshDepth;
+        public static float MarshWaterY => MarshFloorY + MarshDepth - 0.3f;
+
         public static bool IsInsideWorld(float x, float z) =>
             Mathf.Abs(x) <= HalfSize && Mathf.Abs(z) <= HalfSize;
 
@@ -40,6 +47,8 @@ namespace SoulsGame.World
                 BaseHeightAt(MidGraceCenter.x, MidGraceCenter.z));
             height = FlattenAround(height, x, z, CaveMouthCenter, SmallPlateauRadius,
                 BaseHeightAt(CaveMouthCenter.x, CaveMouthCenter.z));
+            // حوض المستنقع: أرضية مسطحة غائرة تصلح أساساً للكنيسة الغارقة
+            height = FlattenAround(height, x, z, MarshCenter, MarshRadius, MarshFloorY);
 
             // تلال الحواف: حدود طبيعية بدل جدران خفية
             float edge = Mathf.Max(Mathf.Abs(x), Mathf.Abs(z));

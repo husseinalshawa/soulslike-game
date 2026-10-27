@@ -21,6 +21,7 @@ namespace SoulsGame.Player
         public ThirdPersonCamera cameraRig;
         public HorseAvatar horse;
         public List<ForbiddenZone> mountForbiddenZones = new List<ForbiddenZone>();
+        public MarshZone marsh; // الماء الضحل حول الكنيسة — يسنده البناء
 
         // توقيف إدخال القتال والحركة أثناء القوائم (قائمة رفع المستوى)
         public bool InputLocked { get; set; }
@@ -43,6 +44,7 @@ namespace SoulsGame.Player
         public GearInventory<SpellData> Spells { get; } = new GearInventory<SpellData>();
         public FocusPool Focus { get; private set; }
         public WeaponBuff Buff { get; } = new WeaponBuff();
+        public Story.KeyItemInventory KeyItems { get; } = new Story.KeyItemInventory();
 
         public ArmorData defaultArmor;
         public SpellData spellBolt;
@@ -273,6 +275,13 @@ namespace SoulsGame.Player
             return true;
         }
 
+        // الماء يمسك ما يلتقطه: الركوب إلى داخل المستنقع = ترجّل إجباري.
+        public void EnforceMarshRules()
+        {
+            if (IsRiding && marsh != null && marsh.Contains(transform.position))
+                ForceDismount();
+        }
+
         public void ForceDismount()
         {
             if (!Mount.IsMounted && (horse == null || !horse.HasRider))
@@ -399,12 +408,16 @@ namespace SoulsGame.Player
             if (IsRiding && horse != null)
             {
                 horse.MoveInput = move; // راكباً: الإدخال يقود الحصان
+                EnforceMarshRules();
             }
             else
             {
                 motor.MoveInput = move;
                 motor.SprintActive = isSprinting;
                 motor.State = Brain.CurrentState;
+                motor.TerrainSpeedMultiplier =
+                    marsh != null && marsh.Contains(transform.position)
+                        ? MarshZone.SpeedMultiplier : 1f;
             }
 
             Vector2 mouseLook = InputLocked ? Vector2.zero : Controls.LookMouse.ReadValue<Vector2>();

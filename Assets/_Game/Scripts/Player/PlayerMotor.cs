@@ -45,6 +45,9 @@ namespace SoulsGame.Player
         public float DodgeDistanceMultiplier { get; set; } = 1f;
         public float DodgeDurationMultiplier { get; set; } = 1f;
 
+        // أرضية المستنقع تبطئ المشي/الركض/العدو فقط — لا التفادي ولا اندفاعة المهارة
+        public float TerrainSpeedMultiplier { get; set; } = 1f;
+
         private CharacterController controller;
         private Vector3 dodgeDirection;
         private float verticalVelocity;
@@ -90,7 +93,7 @@ namespace SoulsGame.Player
                     float speed = State == PlayerStateId.Block ? stats.walkSpeed
                         : SprintActive ? stats.sprintSpeed
                         : stats.runSpeed;
-                    planar = moveDir * speed;
+                    planar = moveDir * (speed * TerrainSpeedMultiplier);
 
                     if (StrafeTarget != null)
                         FaceTowards(StrafeTarget.position - transform.position, dt);

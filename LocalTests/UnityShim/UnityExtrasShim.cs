@@ -26,9 +26,22 @@ namespace UnityEngine
         public static Color clear => new Color(0, 0, 0, 0);
     }
 
+    public class Shader : Object
+    {
+        // بيئة الاختبار بلا شيدرز — المسارات المعتمدة عليها تُحرس بـ null
+        public static Shader Find(string name) => null;
+    }
+
     public class Material : Object
     {
         public Color color;
+        public int renderQueue;
+        public Material() { }
+        public Material(Shader shader) { }
+        public void SetFloat(string propertyName, float value) { }
+        public void SetColor(string propertyName, Color value) => color = value;
+        public void SetOverrideTag(string tag, string value) { }
+        public void EnableKeyword(string keyword) { }
     }
 
     public class Renderer : Component
@@ -100,6 +113,7 @@ namespace UnityEngine
         public float height;
         public float radius;
         public Vector3 center;
+        public float stepOffset;
         public bool isGrounded => true;
         public void Move(Vector3 motion) { }
         public void SimpleMove(Vector3 speed) { }
