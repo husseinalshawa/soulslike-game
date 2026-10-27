@@ -1,0 +1,27 @@
+# Unity generated
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# IDE / OS
+.vs/
+.idea/
+*.csproj
+*.sln
+*.user
+.DS_Store
+
+# Local test harness build output (keep sources)
+LocalTests/bin/
+LocalTests/obj/
+# LocalTests project files are intentional, un-ignore them
+!LocalTests/*.csproj
+
+# SDD scratch workspace
+.superpowers/
