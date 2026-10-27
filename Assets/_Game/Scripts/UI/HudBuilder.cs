@@ -15,6 +15,9 @@ namespace SoulsGame.UI
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvasGo.AddComponent<CanvasScaler>();
+            // بدون GraphicRaycaster + EventSystem لا تعمل أزرار uGUI إطلاقاً
+            canvasGo.AddComponent<GraphicRaycaster>();
+            BuildEventSystem();
 
             var health = BuildBar(canvasGo.transform, "HealthBar",
                 new Vector2(30f, 70f), new Vector2(300f, 18f), new Color(0.75f, 0.15f, 0.15f));
@@ -28,6 +31,15 @@ namespace SoulsGame.UI
             var death = BuildDeathScreen(canvasGo.transform);
             BuildSoulsCounter(canvasGo.transform, player);
             return (health, stamina, death);
+        }
+
+        private static void BuildEventSystem()
+        {
+            if (GameObject.FindObjectOfType<UnityEngine.EventSystems.EventSystem>() != null)
+                return;
+            var go = new GameObject("EventSystem");
+            go.AddComponent<UnityEngine.EventSystems.EventSystem>();
+            go.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
         }
 
         public static Toast BuildToast(PlayerAvatar player)

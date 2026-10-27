@@ -31,17 +31,25 @@ namespace SoulsGame.Core
             player = playerAvatar;
             enemies = allEnemies;
             deathScreen = screen;
+            EnemyAvatar.AggroSuppressed = false; // حالة static — تصفير عند كل بدء
             Graces.AddSite(0, playerAvatar.transform.position, discovered: true);
 
             player.Damageable.Died += OnPlayerDied;
-            player.InteractPressed += OnInteract;
+            player.InteractPressed += HandleInteract;
             deathScreen.OnRespawnRequested = Respawn;
         }
 
-        private void OnInteract()
+        // زر التفاعل: يغلق القائمة إن كانت مفتوحة (مخرج كيبورد مضمون)،
+        // وإلا يجلس عند موقع راحة قريب — ولا شيء من هذا أثناء الموت.
+        public void HandleInteract()
         {
-            if (levelUpMenu != null && levelUpMenu.IsOpen)
+            if (player.Damageable.Health.IsDead)
                 return;
+            if (levelUpMenu != null && levelUpMenu.IsOpen)
+            {
+                levelUpMenu.Close();
+                return;
+            }
             if (Graces.CanRest(player.transform.position, out int siteId))
                 RestAtGrace(siteId);
         }
@@ -63,6 +71,8 @@ namespace SoulsGame.Core
 
         private void OnPlayerDied()
         {
+            if (levelUpMenu != null && levelUpMenu.IsOpen)
+                levelUpMenu.Close();
             Ledger.Drop(player.transform.position, player.Wallet.TakeAll());
             RefreshStainMarker();
             deathScreen.Show();
@@ -113,6 +123,9 @@ namespace SoulsGame.Core
 
         public void Respawn()
         {
+            if (levelUpMenu != null && levelUpMenu.IsOpen)
+                levelUpMenu.Close();
+
             Vector3 spawn = Graces.RespawnPosition;
             var controller = player.GetComponent<CharacterController>();
             if (controller != null) controller.enabled = false;

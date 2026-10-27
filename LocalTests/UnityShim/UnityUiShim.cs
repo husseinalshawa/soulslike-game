@@ -42,12 +42,24 @@ namespace UnityEngine
     }
 }
 
+namespace UnityEngine.EventSystems
+{
+    public class EventSystem : Behaviour { }
+}
+
+namespace UnityEngine.InputSystem.UI
+{
+    public class InputSystemUIInputModule : Behaviour { }
+}
+
 namespace UnityEngine.UI
 {
     public class CanvasScaler : Behaviour
     {
         public Vector2 referenceResolution;
     }
+
+    public class GraphicRaycaster : Behaviour { }
 
     public class Graphic : Behaviour
     {

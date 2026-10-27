@@ -24,6 +24,18 @@ namespace SoulsGame.Tests
         }
 
         [Test]
+        public void SetMax_DoesNotReviveDead()
+        {
+            var health = new HealthPool(max: 100f);
+            health.TakeDamage(100f);
+            Assert.IsTrue(health.IsDead);
+
+            health.SetMax(112f); // رفع مستوى لا يُحيي ميتاً — الإحياء عبر ResetToFull فقط
+
+            Assert.IsTrue(health.IsDead, "SetMax ليس طريق إحياء جانبياً");
+        }
+
+        [Test]
         public void Poise_BreaksAtThreshold_AndResets()
         {
             var poise = new PoiseMeter(max: 40f, regenPerSecond: 10f);

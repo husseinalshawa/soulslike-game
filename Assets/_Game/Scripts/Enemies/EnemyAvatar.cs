@@ -10,6 +10,9 @@ namespace SoulsGame.Enemies
     [RequireComponent(typeof(Damageable))]
     public class EnemyAvatar : MonoBehaviour, ITargetable
     {
+        // مكبوح أثناء قائمة رفع المستوى: لا اكتشاف للاعب الجالس العاجز عن الرد
+        public static bool AggroSuppressed;
+
         private const float ChaseSpeed = 5f;
         private const float PatrolSpeed = 1.5f;
         private const float TurnSpeedDegrees = 360f;
@@ -89,6 +92,9 @@ namespace SoulsGame.Enemies
             toPlayer.y = 0f;
             float distance = toPlayer.magnitude;
             float angle = Vector3.Angle(PlanarForward(), toPlayer);
+
+            if (AggroSuppressed && Brain.CurrentState == EnemyStateId.Patrol)
+                distance = float.MaxValue; // لا اكتشاف أثناء القائمة
 
             Brain.Tick(dt, distance, angle);
 

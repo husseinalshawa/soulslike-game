@@ -34,6 +34,7 @@ namespace SoulsGame.UI
         {
             panel.SetActive(true);
             player.InputLocked = true;
+            Enemies.EnemyAvatar.AggroSuppressed = true; // لا اعتداء والقائمة مفتوحة
             Refresh();
         }
 
@@ -41,6 +42,7 @@ namespace SoulsGame.UI
         {
             panel.SetActive(false);
             player.InputLocked = false;
+            Enemies.EnemyAvatar.AggroSuppressed = false;
         }
 
         private void Buy(StatId stat)
@@ -61,6 +63,11 @@ namespace SoulsGame.UI
             vigorValue.text = $"Vigor {p.GetStat(StatId.Vigor)}  (+12 HP)";
             enduranceValue.text = $"Endurance {p.GetStat(StatId.Endurance)}  (+6 ST)";
             strengthValue.text = $"Strength {p.GetStat(StatId.Strength)}  (+2 DMG)";
+
+            bool affordable = player.Wallet.Current >= p.NextLevelCost;
+            vigorButton.interactable = affordable;
+            enduranceButton.interactable = affordable;
+            strengthButton.interactable = affordable;
         }
     }
 }

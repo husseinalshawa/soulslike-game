@@ -60,9 +60,10 @@ namespace SoulsGame.Core
             BuildCamera(Player);
             Enemy = BuildEnemy(new Vector3(0f, 1.1f, 5f),
                 new Vector3(-5f, 1.1f, 5f), new Vector3(5f, 1.1f, 5f));
-            // جندي ثانٍ في طريق غرفة البوس — ليكون لإعادة الإحياء عند الراحة معنى
-            Enemy2 = BuildEnemy(new Vector3(3f, 1.1f, 12f),
-                new Vector3(0f, 1.1f, 12f), new Vector3(6f, 1.1f, 12f));
+            // جندي ثانٍ في طريق غرفة البوس — دوريته بعيدة عن موقع الراحة الثاني
+            // كي لا يعتدي على الجالس (المواصفة: لا قتال أثناء القائمة)
+            Enemy2 = BuildEnemy(new Vector3(-4f, 1.1f, 11f),
+                new Vector3(-7f, 1.1f, 11f), new Vector3(-1f, 1.1f, 11f));
             BuildHudAndGameLoop();
             BuildBossArea();
         }
@@ -106,13 +107,21 @@ namespace SoulsGame.Core
 
             Boss = BuildBoss(new Vector3(0f, 1.8f, 33f));
 
-            // جدار الضباب في الفتحة (x 2..6 عند z=20.5)
-            var gateGo = CreateBox("FogGate", new Vector3(4f, 2f, 20.5f), new Vector3(4f, 4f, 0.3f), new Color(0.55f, 0.45f, 0.7f));
-            var gateCollider = gateGo.GetComponent<Collider>();
-            gateCollider.isTrigger = true;
+            // جدار الضباب المرئي في الفتحة (x 2..6 عند z=20.5) — عبوره حر، بلا تصادم
+            var fogVisual = CreateBox("FogVisual", new Vector3(4f, 2f, 20.5f), new Vector3(4f, 4f, 0.3f), new Color(0.55f, 0.45f, 0.7f));
+            var fogVisualCollider = fogVisual.GetComponent<Collider>();
+            if (fogVisualCollider != null) fogVisualCollider.enabled = false;
+
+            // المشغّل داخل الغرفة (z=22.5): لا يُقفل الحاجز إلا واللاعب داخلها فعلاً
+            var triggerGo = new GameObject("FogGateTrigger");
+            triggerGo.transform.position = new Vector3(4f, 2f, 22.5f);
+            var triggerCollider = triggerGo.AddComponent<BoxCollider>();
+            triggerCollider.isTrigger = true;
+            triggerCollider.size = new Vector3(4f, 4f, 0.6f);
+
             var barrier = CreateBox("FogBarrier", new Vector3(4f, 2f, 20.5f), new Vector3(4f, 4f, 0.4f), new Color(0.35f, 0.25f, 0.5f));
             barrier.SetActive(false);
-            var gate = gateGo.AddComponent<FogGate>();
+            var gate = triggerGo.AddComponent<FogGate>();
             gate.barrier = barrier;
             gate.OnPlayerEntered = () => Boss.BeginFight();
 
@@ -125,6 +134,9 @@ namespace SoulsGame.Core
             {
                 Player.Wallet.Add(bossStats.soulsReward);
                 gate.Seal(false);
+                // الضباب يختفي مع النصر (المواصفة §5)
+                var fogRenderer = fogVisual.GetComponent<Renderer>();
+                if (fogRenderer != null) fogRenderer.enabled = false;
                 if (banner != null)
                     banner.Show("GREAT ENEMY FELLED");
             };

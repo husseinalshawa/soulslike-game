@@ -41,7 +41,15 @@ namespace SoulsGame.EditorTools
             {
                 s.maxHealth = 150f;
                 s.maxPoise = 30f;
+                s.soulsReward = 100;
             });
+            // ترحيل أصول موجودة من المرحلة 1 لا تملك مكافأة أرواح
+            var existingEnemyStats = AssetDatabase.LoadAssetAtPath<CharacterStats>("Assets/_Game/Data/EnemyMeleeStats.asset");
+            if (existingEnemyStats != null && existingEnemyStats.soulsReward == 0)
+            {
+                existingEnemyStats.soulsReward = 100;
+                EditorUtility.SetDirty(existingEnemyStats);
+            }
             CreateAssetIfMissing<WeaponData>("Assets/_Game/Data/Enemy_Sword.asset", w =>
             {
                 w.lightDamage = 20f;

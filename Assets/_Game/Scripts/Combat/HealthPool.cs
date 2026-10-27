@@ -17,11 +17,11 @@ namespace SoulsGame.Combat
         }
 
         // رفع المستوى: حد أقصى جديد مع ملء كامل (يحدث عند الراحة فقط).
+        // لا يُحيي ميتاً — الإحياء الرسمي عبر ResetToFull وحده.
         public void SetMax(float newMax)
         {
             Max = newMax;
             Current = newMax;
-            IsDead = false;
         }
 
         public void TakeDamage(float amount)

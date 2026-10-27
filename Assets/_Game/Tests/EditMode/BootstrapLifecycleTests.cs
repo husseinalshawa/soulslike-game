@@ -76,5 +76,28 @@ namespace SoulsGame.Tests
             Assert.AreEqual(2000, bootstrap.Player.Wallet.Current, "النصر يمنح 2000 روح");
             Assert.IsTrue(bootstrap.Boss.DefeatedForever, "البوس لا يعود أبداً");
         }
+
+        [Test]
+        public void Interact_TogglesMenu_AndIsDeadSafe()
+        {
+            var go = new GameObject("Bootstrap");
+            var bootstrap = go.AddComponent<GameBootstrap>();
+            var loop = bootstrap.Loop;
+
+            loop.RestAtGrace(0);
+            Assert.IsTrue(loop.levelUpMenu.IsOpen, "الراحة تفتح القائمة");
+            Assert.IsTrue(bootstrap.Player.InputLocked);
+
+            loop.HandleInteract(); // زر التفاعل وهي مفتوحة = إغلاق (مخرج كيبورد مضمون)
+            Assert.IsFalse(loop.levelUpMenu.IsOpen);
+            Assert.IsFalse(bootstrap.Player.InputLocked);
+
+            bootstrap.Player.Damageable.Health.TakeDamage(1000f); // اللاعب مات
+            Assert.IsFalse(loop.levelUpMenu.IsOpen, "موت اللاعب يغلق القائمة لو كانت مفتوحة");
+
+            loop.HandleInteract(); // محاولة جلوس وهو ميت
+            Assert.IsFalse(loop.levelUpMenu.IsOpen, "لا راحة ولا إحياء أثناء شاشة الموت");
+            Assert.IsTrue(bootstrap.Player.Damageable.Health.IsDead, "ما زال ميتاً حتى الإحياء الرسمي");
+        }
     }
 }

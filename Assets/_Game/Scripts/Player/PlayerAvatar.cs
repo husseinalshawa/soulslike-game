@@ -100,10 +100,8 @@ namespace SoulsGame.Player
             {
                 if (!InputLocked) Brain.RequestDodge();
             };
-            Controls.Interact.performed += _ =>
-            {
-                if (!InputLocked) InteractPressed?.Invoke();
-            };
+            // يعمل حتى أثناء قفل الإدخال — إغلاق القائمة يمر من هنا
+            Controls.Interact.performed += _ => InteractPressed?.Invoke();
             Controls.LightAttack.performed += _ =>
             {
                 if (InputLocked) return;
@@ -145,8 +143,8 @@ namespace SoulsGame.Player
             motor.SprintActive = isSprinting;
             motor.State = Brain.CurrentState;
 
-            Vector2 mouseLook = Controls.LookMouse.ReadValue<Vector2>();
-            Vector2 stickLook = Controls.LookStick.ReadValue<Vector2>();
+            Vector2 mouseLook = InputLocked ? Vector2.zero : Controls.LookMouse.ReadValue<Vector2>();
+            Vector2 stickLook = InputLocked ? Vector2.zero : Controls.LookStick.ReadValue<Vector2>();
             if (cameraRig != null)
             {
                 cameraRig.MouseLook = mouseLook;
