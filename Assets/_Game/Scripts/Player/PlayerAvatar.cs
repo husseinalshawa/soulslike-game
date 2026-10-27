@@ -44,6 +44,7 @@ namespace SoulsGame.Player
         public GearInventory<SpellData> Spells { get; } = new GearInventory<SpellData>();
         public FocusPool Focus { get; private set; }
         public WeaponBuff Buff { get; } = new WeaponBuff();
+        public Story.KeyItemInventory KeyItems { get; } = new Story.KeyItemInventory();
 
         public ArmorData defaultArmor;
         public SpellData spellBolt;
