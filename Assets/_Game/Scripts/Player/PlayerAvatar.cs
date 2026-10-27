@@ -376,6 +376,16 @@ namespace SoulsGame.Player
             Buff.Tick(dt);
             Brain.Tick(dt);
 
+            // السلاح يتوهج أزرق أثناء التعزيز
+            if (weaponHitbox != null)
+            {
+                var weaponRenderer = weaponHitbox.GetComponent<Renderer>();
+                if (weaponRenderer != null)
+                    weaponRenderer.material.color = Buff.IsActive
+                        ? new Color(0.45f, 0.65f, 1f)
+                        : new Color(0.6f, 0.6f, 0.65f);
+            }
+
             if (IsRiding && horse != null)
             {
                 horse.MoveInput = move; // راكباً: الإدخال يقود الحصان

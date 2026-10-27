@@ -66,6 +66,17 @@ namespace SoulsGame.EditorTools
                 s.runSpeed = 3.5f;
                 s.soulsReward = 2000;
             });
+            // عتاد المرحلة 4 — من GearLibrary (مصدر الأرقام الواحد المُختبر)
+            CreateGearAssetIfMissing("Assets/_Game/Data/Weapon_Greatsword.asset", GearLibrary.Greatsword());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Weapon_TwinDaggers.asset", GearLibrary.TwinDaggers());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Weapon_Spear.asset", GearLibrary.Spear());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Weapon_Warhammer.asset", GearLibrary.Warhammer());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Armor_Cloth.asset", GearLibrary.Cloth());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Armor_Leather.asset", GearLibrary.Leather());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Armor_Plate.asset", GearLibrary.Plate());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Spell_GlintBolt.asset", GearLibrary.GlintBolt());
+            CreateGearAssetIfMissing("Assets/_Game/Data/Spell_GlintbladeEdge.asset", GearLibrary.WeaponBuffSpell());
+
             AssetDatabase.SaveAssets();
             Debug.Log("SoulsGame: data assets ready under Assets/_Game/Data/");
         }
@@ -88,6 +99,16 @@ namespace SoulsGame.EditorTools
             System.IO.Directory.CreateDirectory("Assets/_Game/Scenes");
             EditorSceneManager.SaveScene(scene, "Assets/_Game/Scenes/Arena.unity");
             Debug.Log("SoulsGame: Arena scene saved — press Play to build and play the arena.");
+        }
+
+        private static void CreateGearAssetIfMissing(string path, ScriptableObject instance)
+        {
+            if (AssetDatabase.LoadAssetAtPath<ScriptableObject>(path) != null)
+            {
+                Object.DestroyImmediate(instance);
+                return;
+            }
+            AssetDatabase.CreateAsset(instance, path);
         }
 
         private static void CreateAssetIfMissing<T>(string path, System.Action<T> configure) where T : ScriptableObject
