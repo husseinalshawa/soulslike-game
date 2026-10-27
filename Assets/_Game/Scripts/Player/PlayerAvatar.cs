@@ -75,7 +75,15 @@ namespace SoulsGame.Player
         private void WireInput()
         {
             Controls.Dodge.performed += _ => Brain.RequestDodge();
-            Controls.LightAttack.performed += _ => Brain.RequestLightAttack();
+            Controls.LightAttack.performed += _ =>
+            {
+                // Shift+زر أيسر = ثقيلة؛ الربط البسيط للزر الأيسر يُطلق أيضاً —
+                // نتجاهله والـ Shift مضغوط حتى لا تخرج ضربتان من ضغطة واحدة
+                var keyboard = Keyboard.current;
+                if (keyboard != null && keyboard.leftShiftKey.isPressed)
+                    return;
+                Brain.RequestLightAttack();
+            };
             Controls.HeavyAttack.performed += _ => Brain.RequestHeavyAttack();
             Controls.Block.performed += _ => Brain.SetBlockHeld(true);
             Controls.Block.canceled += _ => Brain.SetBlockHeld(false);
@@ -101,11 +109,15 @@ namespace SoulsGame.Player
             motor.SprintActive = isSprinting;
             motor.State = Brain.CurrentState;
 
-            Vector2 look = Controls.Look.ReadValue<Vector2>();
+            Vector2 mouseLook = Controls.LookMouse.ReadValue<Vector2>();
+            Vector2 stickLook = Controls.LookStick.ReadValue<Vector2>();
             if (cameraRig != null)
-                cameraRig.LookInput = look;
+            {
+                cameraRig.MouseLook = mouseLook;
+                cameraRig.StickLook = stickLook;
+            }
             if (lockOn != null)
-                lockOn.ReportLookInput(look);
+                lockOn.ReportLookInput(stickLook, mouseLook);
         }
 
         private void OnDestroy()

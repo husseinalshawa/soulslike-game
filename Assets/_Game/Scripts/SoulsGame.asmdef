@@ -2,7 +2,8 @@
     "name": "SoulsGame",
     "rootNamespace": "SoulsGame",
     "references": [
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

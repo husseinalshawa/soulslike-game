@@ -9,7 +9,8 @@ namespace SoulsGame.Player
         private const float Distance = 5f;
         private const float Height = 2f;
         private const float AimHeight = 1.5f;
-        private const float Sensitivity = 0.15f;
+        private const float MouseSensitivity = 0.12f;     // درجة لكل بكسل — بلا dt
+        private const float StickSensitivityPerSecond = 160f; // درجة/ثانية عند انحراف كامل
         private const float MinPitch = -30f;
         private const float MaxPitch = 60f;
         private const float LockOnPitch = 12f;
@@ -18,8 +19,9 @@ namespace SoulsGame.Player
         public Transform followTarget;
         public LockOnSystem lockOn;
 
-        // يغذيه PlayerAvatar كل إطار من إدخال النظرة.
-        public Vector2 LookInput { get; set; }
+        // يغذيهما PlayerAvatar كل إطار من إدخال النظرة.
+        public Vector2 MouseLook { get; set; }
+        public Vector2 StickLook { get; set; }
 
         private float yaw;
         private float pitch = 15f;
@@ -39,8 +41,10 @@ namespace SoulsGame.Player
             }
             else
             {
-                yaw += LookInput.x * Sensitivity * 60f * Time.deltaTime;
-                pitch = Mathf.Clamp(pitch - LookInput.y * Sensitivity * 60f * Time.deltaTime, MinPitch, MaxPitch);
+                // دلتا الماوس لكل-إطار أصلاً — ضربها في dt يجعل الحساسية تتبع الـ FPS
+                yaw += MouseLook.x * MouseSensitivity + StickLook.x * StickSensitivityPerSecond * Time.deltaTime;
+                float pitchDelta = MouseLook.y * MouseSensitivity + StickLook.y * StickSensitivityPerSecond * Time.deltaTime;
+                pitch = Mathf.Clamp(pitch - pitchDelta, MinPitch, MaxPitch);
             }
 
             Quaternion orbit = Quaternion.Euler(pitch, yaw, 0f);

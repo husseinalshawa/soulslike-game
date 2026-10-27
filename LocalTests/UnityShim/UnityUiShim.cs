@@ -52,7 +52,7 @@ namespace UnityEngine.UI
     public class Graphic : Behaviour
     {
         public Color color;
-        public RectTransform rectTransform => null;
+        public RectTransform rectTransform => GetComponent<RectTransform>();
     }
 
     public class Image : Graphic

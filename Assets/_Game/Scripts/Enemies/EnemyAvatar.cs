@@ -28,6 +28,7 @@ namespace SoulsGame.Enemies
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
         private Vector3 currentPatrolGoal;
+        private CharacterController controller;
 
         // ITargetable — نقطة القفل في منتصف الجسم
         public Vector3 Position => transform.position + Vector3.up * 1f;
@@ -36,6 +37,7 @@ namespace SoulsGame.Enemies
         private void Awake()
         {
             Damageable = GetComponent<Damageable>();
+            controller = GetComponent<CharacterController>();
             Brain = new EnemyBrain(weapon);
 
             spawnPosition = transform.position;
@@ -125,7 +127,10 @@ namespace SoulsGame.Enemies
             if (direction.sqrMagnitude < 0.0001f)
                 return;
             direction = direction.normalized;
-            transform.position += direction * speed * dt;
+            if (controller != null && controller.enabled)
+                controller.SimpleMove(direction * speed); // يصطدم بالجدران والصناديق واللاعب
+            else
+                transform.position += direction * speed * dt;
             FaceTowards(direction, dt);
         }
 
@@ -147,14 +152,17 @@ namespace SoulsGame.Enemies
 
         public void ResetToSpawn()
         {
+            // CharacterController مفعّل قد يتجاهل تغيير الموضع المباشر — عطّله أولاً
+            var bodyCollider = GetComponent<Collider>();
+            if (bodyCollider != null) bodyCollider.enabled = false;
             transform.position = spawnPosition;
             transform.rotation = spawnRotation;
+            if (bodyCollider != null) bodyCollider.enabled = true;
+
             currentPatrolGoal = patrolB;
             Damageable.ResetToFull();
             Brain.ResetToPatrol();
             if (weaponHitbox != null) weaponHitbox.Deactivate();
-            var bodyCollider = GetComponent<Collider>();
-            if (bodyCollider != null) bodyCollider.enabled = true;
             var renderer = GetComponent<Renderer>();
             if (renderer != null)
                 renderer.material.color = new Color(0.6f, 0.2f, 0.2f);

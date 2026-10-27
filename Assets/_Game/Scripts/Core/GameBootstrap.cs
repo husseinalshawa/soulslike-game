@@ -63,6 +63,16 @@ namespace SoulsGame.Core
             go.transform.position = position;
             Tint(go, new Color(0.6f, 0.2f, 0.2f));
 
+            go.SetActive(false); // نفس نمط اللاعب: اربط ثم فعّل
+
+            // جسم العدو: CharacterController بدل الـ collider الصلب حتى لا يخترق
+            // الجدران والصناديق واللاعب أثناء المطاردة
+            Destroy(go.GetComponent<CapsuleCollider>());
+            var controller = go.AddComponent<CharacterController>();
+            controller.height = 2f;
+            controller.radius = 0.4f;
+            controller.center = Vector3.zero;
+
             var damageable = go.AddComponent<Damageable>();
             damageable.stats = enemyStats;
 
@@ -96,6 +106,7 @@ namespace SoulsGame.Core
             enemy.patrolA = patrolA;
             enemy.patrolB = patrolB;
 
+            go.SetActive(true);
             return enemy;
         }
 
@@ -156,6 +167,10 @@ namespace SoulsGame.Core
             go.transform.position = position;
             Tint(go, new Color(0.75f, 0.75f, 0.85f));
 
+            // مهم: AddComponent على كائن نشط يستدعي Awake قبل ضبط الحقول —
+            // نبني معطّلاً، نربط كل الحقول، ثم نفعّل فيجري Awake بترتيب سليم.
+            go.SetActive(false);
+
             // الكبسولة البدائية تأتي بـ CapsuleCollider صلب — نستبدله بـ CharacterController
             Destroy(go.GetComponent<CapsuleCollider>());
             var controller = go.AddComponent<CharacterController>();
@@ -199,6 +214,7 @@ namespace SoulsGame.Core
             avatar.weapon = playerWeapon;
             avatar.weaponHitbox = hitbox;
 
+            go.SetActive(true); // الآن تجري Awake وكل الحقول مضبوطة
             return avatar;
         }
 

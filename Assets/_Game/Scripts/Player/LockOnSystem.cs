@@ -10,7 +10,8 @@ namespace SoulsGame.Player
         public const float MaxAcquireDistance = 15f;
         public const float MaxAcquireAngleDegrees = 60f;
         public const float ReleaseDistance = 20f;
-        private const float SwitchThreshold = 0.6f;
+        private const float StickSwitchThreshold = 0.6f;   // انحراف العصا
+        private const float MouseSwitchThreshold = 25f;    // نقرة ماوس حادة (بكسل/إطار)
         private const float SwitchCooldownSeconds = 0.35f;
 
         private static readonly List<ITargetable> registry = new List<ITargetable>();
@@ -44,14 +45,23 @@ namespace SoulsGame.Player
                 MaxAcquireDistance, MaxAcquireAngleDegrees);
         }
 
-        // يستقبل إدخال النظرة من الـ Avatar لتبديل الأهداف أثناء القفل.
-        public void ReportLookInput(Vector2 look)
+        // يستقبل إدخال النظرة من الـ Avatar لتبديل الأهداف أثناء القفل —
+        // عتبتان منفصلتان: انحراف العصا، أو نقرة ماوس حادة (لا الحركة العادية).
+        public void ReportLookInput(Vector2 stick, Vector2 mouseDelta)
         {
-            if (!IsLocked || switchCooldown > 0f || Mathf.Abs(look.x) < SwitchThreshold)
+            if (!IsLocked || switchCooldown > 0f)
+                return;
+
+            float direction;
+            if (Mathf.Abs(stick.x) >= StickSwitchThreshold)
+                direction = stick.x;
+            else if (Mathf.Abs(mouseDelta.x) >= MouseSwitchThreshold)
+                direction = mouseDelta.x;
+            else
                 return;
 
             Vector3 forward = cameraTransform != null ? cameraTransform.forward : transform.forward;
-            var next = LockOnSelector.Switch(CurrentTarget, look.x > 0f ? 1 : -1,
+            var next = LockOnSelector.Switch(CurrentTarget, direction > 0f ? 1 : -1,
                 transform.position, forward, registry, MaxAcquireDistance, MaxAcquireAngleDegrees);
             if (!ReferenceEquals(next, CurrentTarget))
             {

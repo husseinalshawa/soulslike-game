@@ -7,7 +7,8 @@ namespace SoulsGame.Player
     public class PlayerControls
     {
         public readonly InputAction Move;
-        public readonly InputAction Look;
+        public readonly InputAction LookMouse; // دلتا الماوس: بكسلات لكل إطار، بلا ضرب في dt
+        public readonly InputAction LookStick; // العصا اليمنى: اتجاه مستمر، يُضرب في dt
         public readonly InputAction Sprint;
         public readonly InputAction Dodge;
         public readonly InputAction LightAttack;
@@ -29,9 +30,11 @@ namespace SoulsGame.Player
                 .With("Right", "<Keyboard>/d");
             Move.AddBinding("<Gamepad>/leftStick");
 
-            Look = map.AddAction("Look", InputActionType.Value);
-            Look.AddBinding("<Mouse>/delta");
-            Look.AddBinding("<Gamepad>/rightStick");
+            LookMouse = map.AddAction("LookMouse", InputActionType.Value);
+            LookMouse.AddBinding("<Mouse>/delta");
+
+            LookStick = map.AddAction("LookStick", InputActionType.Value);
+            LookStick.AddBinding("<Gamepad>/rightStick");
 
             Sprint = map.AddAction("Sprint", InputActionType.Button);
             Sprint.AddBinding("<Keyboard>/leftShift");

@@ -77,11 +77,26 @@ namespace UnityEngine
         public Vector3 center;
         public bool isGrounded => true;
         public void Move(Vector3 motion) { }
+        public void SimpleMove(Vector3 speed) { }
+    }
+}
+
+namespace UnityEngine.InputSystem.Controls
+{
+    public class KeyControl
+    {
+        public bool isPressed => false;
     }
 }
 
 namespace UnityEngine.InputSystem
 {
+    public class Keyboard
+    {
+        public static Keyboard current => null;
+        public Controls.KeyControl leftShiftKey => null;
+    }
+
     public enum InputActionType { Value, Button, PassThrough }
 
     public class InputActionMap

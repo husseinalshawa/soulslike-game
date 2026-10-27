@@ -58,19 +58,24 @@ namespace UnityEngine
         public static void LogError(object message) { }
     }
 
+    // دورة حياة مُحاكاة بإخلاص لسلوك Unity الحرج: AddComponent على GameObject
+    // نشط يستدعي Awake فوراً (قبل أن يضبط المستدعي الحقول!)، وعلى GameObject
+    // معطّل يؤجل Awake حتى SetActive(true). هذا يلتقط أخطاء ترتيب التهيئة
+    // التي تنفجر أول ما يضغط الشريك Play في Unity الحقيقي.
     public class Component : Object
     {
-        public GameObject gameObject => null;
-        public Transform transform => null;
-        public T GetComponent<T>() => default;
-        public T GetComponentInParent<T>() => default;
-        public T GetComponentInChildren<T>() => default;
-        public T[] GetComponentsInChildren<T>() => Array.Empty<T>();
+        internal GameObject owner;
+        public GameObject gameObject => owner;
+        public Transform transform => owner?.transform;
+        public T GetComponent<T>() => owner != null ? owner.GetComponent<T>() : default;
+        public T GetComponentInParent<T>() => GetComponent<T>();
+        public T GetComponentInChildren<T>() => GetComponent<T>();
+        public T[] GetComponentsInChildren<T>() => owner != null ? owner.GetComponents<T>() : Array.Empty<T>();
     }
 
     public class Behaviour : Component
     {
-        public bool enabled;
+        public bool enabled = true;
         public bool isActiveAndEnabled => enabled;
     }
 
@@ -84,29 +89,124 @@ namespace UnityEngine
         public Vector3 localPosition;
         public Quaternion rotation;
         public Quaternion localRotation;
-        public Vector3 localScale;
-        public Vector3 forward;
-        public Vector3 right;
-        public Vector3 up;
+        public Vector3 localScale = Vector3.one;
+        public Vector3 forward = Vector3.forward;
+        public Vector3 right = Vector3.right;
+        public Vector3 up = Vector3.up;
         public Transform parent;
-        public void SetParent(Transform parent) { }
-        public void SetParent(Transform parent, bool worldPositionStays) { }
+        public void SetParent(Transform parent) { this.parent = parent; }
+        public void SetParent(Transform parent, bool worldPositionStays) { this.parent = parent; }
         public void LookAt(Vector3 worldPosition) { }
         public void Rotate(Vector3 eulers) { }
     }
 
     public class GameObject : Object
     {
-        public GameObject() { }
-        public GameObject(string name) { this.name = name; }
-        public Transform transform => null;
-        public bool activeSelf => true;
+        private readonly System.Collections.Generic.List<Component> components =
+            new System.Collections.Generic.List<Component>();
+        private readonly System.Collections.Generic.List<Component> pendingAwake =
+            new System.Collections.Generic.List<Component>();
+        private bool active = true;
+
+        public Transform transform { get; }
         public int layer;
         public string tag;
-        public void SetActive(bool value) { }
-        public T GetComponent<T>() => default;
-        public T AddComponent<T>() where T : Component, new() => new T();
-        public static GameObject CreatePrimitive(PrimitiveType type) => new GameObject(type.ToString());
+
+        public GameObject() : this("GameObject") { }
+
+        public GameObject(string name)
+        {
+            this.name = name;
+            var t = new Transform { owner = this };
+            components.Add(t);
+            transform = t;
+        }
+
+        public bool activeSelf => active;
+
+        public void SetActive(bool value)
+        {
+            if (value && !active)
+            {
+                active = true;
+                var toWake = pendingAwake.ToArray();
+                pendingAwake.Clear();
+                foreach (var component in toWake)
+                    InvokeAwake(component);
+            }
+            else
+            {
+                active = value;
+            }
+        }
+
+        public T AddComponent<T>() where T : Component, new()
+        {
+            var component = new T { owner = this };
+            // كائنات الواجهة في Unity تحمل RectTransform تلقائياً
+            if ((component is UI.Graphic || component is Canvas) && GetComponent<RectTransform>() == null)
+                components.Add(new RectTransform { owner = this });
+            components.Add(component);
+            if (active)
+                InvokeAwake(component);
+            else
+                pendingAwake.Add(component);
+            return component;
+        }
+
+        public T GetComponent<T>()
+        {
+            foreach (var component in components)
+                if (component is T match)
+                    return match;
+            return default;
+        }
+
+        public T[] GetComponents<T>()
+        {
+            var result = new System.Collections.Generic.List<T>();
+            foreach (var component in components)
+                if (component is T match)
+                    result.Add(match);
+            return result.ToArray();
+        }
+
+        internal void RemoveComponent(Component component)
+        {
+            components.Remove(component);
+            pendingAwake.Remove(component);
+        }
+
+        private static void InvokeAwake(Component component)
+        {
+            var method = component.GetType().GetMethod("Awake",
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.NonPublic,
+                null, Type.EmptyTypes, null);
+            if (method == null)
+                return;
+            try
+            {
+                method.Invoke(component, null);
+            }
+            catch (System.Reflection.TargetInvocationException e) when (e.InnerException != null)
+            {
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e.InnerException).Throw();
+            }
+        }
+
+        public static GameObject CreatePrimitive(PrimitiveType type)
+        {
+            var go = new GameObject(type.ToString());
+            go.AddComponent<MeshRenderer>();
+            if (type == PrimitiveType.Capsule || type == PrimitiveType.Cylinder || type == PrimitiveType.Sphere)
+                go.AddComponent<CapsuleCollider>();
+            else
+                go.AddComponent<BoxCollider>();
+            return go;
+        }
+
         public static GameObject Find(string name) => null;
         public static T FindObjectOfType<T>() => default;
     }

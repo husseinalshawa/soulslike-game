@@ -55,7 +55,11 @@ namespace UnityEngine
     public class Object
     {
         public string name;
-        public static void Destroy(Object obj) { }
+        public static void Destroy(Object obj)
+        {
+            if (obj is Component component && component.gameObject != null)
+                component.gameObject.RemoveComponent(component);
+        }
         public static void Destroy(Object obj, float delay) { }
         public static void DontDestroyOnLoad(Object obj) { }
     }

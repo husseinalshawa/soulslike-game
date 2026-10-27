@@ -3,12 +3,35 @@ using SoulsGame.Data;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace SoulsGame.EditorTools
 {
     // أدوات الإعداد لمرة واحدة — تعمل داخل محرر Unity فقط (قائمة Tools/SoulsGame).
     public static class SoulsGameEditorMenu
     {
+        [MenuItem("Tools/SoulsGame/0 - Setup URP")]
+        public static void SetupUrp()
+        {
+            if (GraphicsSettings.defaultRenderPipeline is UniversalRenderPipelineAsset)
+            {
+                Debug.Log("SoulsGame: URP already active.");
+                return;
+            }
+
+            System.IO.Directory.CreateDirectory("Assets/_Game/Data");
+            var rendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
+            AssetDatabase.CreateAsset(rendererData, "Assets/_Game/Data/URP_Renderer.asset");
+            var pipeline = UniversalRenderPipelineAsset.Create(rendererData);
+            AssetDatabase.CreateAsset(pipeline, "Assets/_Game/Data/URP_Pipeline.asset");
+
+            GraphicsSettings.defaultRenderPipeline = pipeline;
+            QualitySettings.renderPipeline = pipeline;
+            AssetDatabase.SaveAssets();
+            Debug.Log("SoulsGame: URP pipeline created and assigned.");
+        }
+
         [MenuItem("Tools/SoulsGame/1 - Create Data Assets")]
         public static void CreateDataAssets()
         {
