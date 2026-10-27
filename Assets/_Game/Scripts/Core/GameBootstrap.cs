@@ -3,6 +3,7 @@ using SoulsGame.Data;
 using SoulsGame.Enemies;
 using SoulsGame.Player;
 using SoulsGame.Progression;
+using SoulsGame.World;
 using UnityEngine;
 
 namespace SoulsGame.Core
@@ -18,7 +19,14 @@ namespace SoulsGame.Core
         public CharacterStats enemyStats;
         public WeaponData enemyWeapon;
         public ProgressionData progressionData;
-        public CharacterStats bossStats; // يستخدمه بناء البوس (المهمة 8)
+        public CharacterStats bossStats;
+        public WorldTheme worldTheme;
+
+        public int TerrainChunkCount { get; private set; }
+
+        // مواضع محتوى المرج (يستهلكها البناء والنثر كمناطق إقصاء)
+        public static readonly Vector3 Camp1Center = new Vector3(60f, 0f, -60f);
+        public static readonly Vector3 Camp2Center = new Vector3(-70f, 0f, -130f);
 
         public PlayerAvatar Player { get; private set; }
         public EnemyAvatar Enemy { get; private set; }
@@ -55,17 +63,30 @@ namespace SoulsGame.Core
                 bossStats.soulsReward = 2000;
             }
 
-            BuildArena();
-            Player = BuildPlayer(new Vector3(0f, 1.1f, -12f));
+            if (worldTheme == null) worldTheme = ScriptableObject.CreateInstance<WorldTheme>();
+
+            // العالم أولاً: تضاريس + ثيم + نثر + كهف
+            var exclusionCenters = new[]
+            {
+                Vector3.zero,                                    // الحصن وغرفة البوس
+                WorldHeightmap.MidGraceCenter,                   // موقع راحة المنتصف
+                WorldHeightmap.CaveMouthCenter,                  // فم الكهف
+                WorldBuilder.CaveRoomCenter,                     // غرفة الكهف
+                Camp1Center, Camp2Center                         // المعسكران
+            };
+            var exclusionRadii = new[] { 48f, 6f, 6f, 14f, 8f, 8f };
+            TerrainChunkCount = WorldBuilder.Build(worldTheme, exclusionCenters, exclusionRadii);
+
+            float fy = WorldHeightmap.FortPlateauHeight; // الحصن كله فوق الهضبة
+            BuildArena(fy);
+            Player = BuildPlayer(WorldBuilder.OnGround(0f, -12f, 1.1f));
             BuildCamera(Player);
-            Enemy = BuildEnemy(new Vector3(0f, 1.1f, 5f),
-                new Vector3(-5f, 1.1f, 5f), new Vector3(5f, 1.1f, 5f));
-            // جندي ثانٍ في طريق غرفة البوس — دوريته بعيدة عن موقع الراحة الثاني
-            // كي لا يعتدي على الجالس (المواصفة: لا قتال أثناء القائمة)
-            Enemy2 = BuildEnemy(new Vector3(-4f, 1.1f, 11f),
-                new Vector3(-7f, 1.1f, 11f), new Vector3(-1f, 1.1f, 11f));
+            Enemy = BuildEnemy(WorldBuilder.OnGround(0f, 5f, 1.1f),
+                WorldBuilder.OnGround(-5f, 5f, 1.1f), WorldBuilder.OnGround(5f, 5f, 1.1f));
+            Enemy2 = BuildEnemy(WorldBuilder.OnGround(-4f, 11f, 1.1f),
+                WorldBuilder.OnGround(-7f, 11f, 1.1f), WorldBuilder.OnGround(-1f, 11f, 1.1f));
             BuildHudAndGameLoop();
-            BuildBossArea();
+            BuildBossArea(fy);
         }
 
         private void BuildHudAndGameLoop()
@@ -84,7 +105,7 @@ namespace SoulsGame.Core
         private void BuildGraceSites()
         {
             // الموقع 0 (مكتشف) أضافته Initialize عند نقطة البداية؛ الموقع 1 أمام بوابة البوس
-            var bossGatePosition = new Vector3(3f, 0f, 16f);
+            var bossGatePosition = WorldBuilder.OnGround(3f, 16f, 0f);
             Loop.Graces.AddSite(1, bossGatePosition, discovered: false);
 
             Loop.graceMarkers = new[]
@@ -94,32 +115,32 @@ namespace SoulsGame.Core
             };
         }
 
-        private void BuildBossArea()
+        private void BuildBossArea(float fy)
         {
-            // غرفة البوس 22×22 شمال الساحة خلف الفتحة
-            CreateBox("BossFloor", new Vector3(0f, -0.5f, 31f), new Vector3(22f, 1f, 22f), new Color(0.22f, 0.2f, 0.26f));
-            CreateBox("BossWall_N", new Vector3(0f, 2f, 41.5f), new Vector3(24f, 4f, 1f), new Color(0.18f, 0.18f, 0.2f));
-            CreateBox("BossWall_W", new Vector3(-10.5f, 2f, 31f), new Vector3(1f, 4f, 22f), new Color(0.18f, 0.18f, 0.2f));
-            CreateBox("BossWall_E", new Vector3(10.5f, 2f, 31f), new Vector3(1f, 4f, 22f), new Color(0.18f, 0.18f, 0.2f));
+            // غرفة البوس 22×22 شمال الساحة خلف الفتحة — كلها فوق هضبة الحصن
+            CreateBox("BossFloor", new Vector3(0f, fy - 0.5f, 31f), new Vector3(22f, 1f, 22f), new Color(0.22f, 0.2f, 0.26f));
+            CreateBox("BossWall_N", new Vector3(0f, fy + 2f, 41.5f), new Vector3(24f, 4f, 1f), new Color(0.18f, 0.18f, 0.2f));
+            CreateBox("BossWall_W", new Vector3(-10.5f, fy + 2f, 31f), new Vector3(1f, 4f, 22f), new Color(0.18f, 0.18f, 0.2f));
+            CreateBox("BossWall_E", new Vector3(10.5f, fy + 2f, 31f), new Vector3(1f, 4f, 22f), new Color(0.18f, 0.18f, 0.2f));
             // سد جانبي الممر بين الساحة والغرفة
-            CreateBox("Corridor_W", new Vector3(1.5f, 2f, 20.9f), new Vector3(1f, 4f, 1.8f), new Color(0.18f, 0.18f, 0.2f));
-            CreateBox("Corridor_E", new Vector3(6.5f, 2f, 20.9f), new Vector3(1f, 4f, 1.8f), new Color(0.18f, 0.18f, 0.2f));
+            CreateBox("Corridor_W", new Vector3(1.5f, fy + 2f, 20.9f), new Vector3(1f, 4f, 1.8f), new Color(0.18f, 0.18f, 0.2f));
+            CreateBox("Corridor_E", new Vector3(6.5f, fy + 2f, 20.9f), new Vector3(1f, 4f, 1.8f), new Color(0.18f, 0.18f, 0.2f));
 
-            Boss = BuildBoss(new Vector3(0f, 1.8f, 33f));
+            Boss = BuildBoss(new Vector3(0f, fy + 1.8f, 33f));
 
             // جدار الضباب المرئي في الفتحة (x 2..6 عند z=20.5) — عبوره حر، بلا تصادم
-            var fogVisual = CreateBox("FogVisual", new Vector3(4f, 2f, 20.5f), new Vector3(4f, 4f, 0.3f), new Color(0.55f, 0.45f, 0.7f));
+            var fogVisual = CreateBox("FogVisual", new Vector3(4f, fy + 2f, 20.5f), new Vector3(4f, 4f, 0.3f), new Color(0.55f, 0.45f, 0.7f));
             var fogVisualCollider = fogVisual.GetComponent<Collider>();
             if (fogVisualCollider != null) fogVisualCollider.enabled = false;
 
             // المشغّل داخل الغرفة (z=22.5): لا يُقفل الحاجز إلا واللاعب داخلها فعلاً
             var triggerGo = new GameObject("FogGateTrigger");
-            triggerGo.transform.position = new Vector3(4f, 2f, 22.5f);
+            triggerGo.transform.position = new Vector3(4f, fy + 2f, 22.5f);
             var triggerCollider = triggerGo.AddComponent<BoxCollider>();
             triggerCollider.isTrigger = true;
             triggerCollider.size = new Vector3(4f, 4f, 0.6f);
 
-            var barrier = CreateBox("FogBarrier", new Vector3(4f, 2f, 20.5f), new Vector3(4f, 4f, 0.4f), new Color(0.35f, 0.25f, 0.5f));
+            var barrier = CreateBox("FogBarrier", new Vector3(4f, fy + 2f, 20.5f), new Vector3(4f, 4f, 0.4f), new Color(0.35f, 0.25f, 0.5f));
             barrier.SetActive(false);
             var gate = triggerGo.AddComponent<FogGate>();
             gate.barrier = barrier;
@@ -274,6 +295,9 @@ namespace SoulsGame.Core
                 cameraGo.AddComponent<AudioListener>();
             }
 
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = worldTheme.skyColor; // سماء الغروب الشاحبة
+
             var rig = camera.gameObject.AddComponent<ThirdPersonCamera>();
             rig.followTarget = player.transform;
 
@@ -287,32 +311,22 @@ namespace SoulsGame.Core
             player.GetComponent<PlayerMotor>().cameraTransform = camera.transform;
         }
 
-        private void BuildArena()
+        // الحصن المهجور فوق الهضبة — أرضيته هي سطح الهضبة نفسه (الإضاءة
+        // والضباب صارا مسؤولية WorldBuilder.ApplyTheme).
+        private void BuildArena(float fy)
         {
-            CreateBox("Ground", new Vector3(0f, -0.5f, 0f), new Vector3(40f, 1f, 40f), new Color(0.25f, 0.25f, 0.28f));
-
             // الجدار الشمالي بفتحة (x من 2 إلى 6) تقود لغرفة البوس
-            CreateBox("Wall_N_Left", new Vector3(-9.5f, 2f, 20.5f), new Vector3(23f, 4f, 1f), new Color(0.2f, 0.2f, 0.22f));
-            CreateBox("Wall_N_Right", new Vector3(13.5f, 2f, 20.5f), new Vector3(15f, 4f, 1f), new Color(0.2f, 0.2f, 0.22f));
-            CreateBox("Wall_S", new Vector3(0f, 2f, -20.5f), new Vector3(42f, 4f, 1f), new Color(0.2f, 0.2f, 0.22f));
-            CreateBox("Wall_E", new Vector3(20.5f, 2f, 0f), new Vector3(1f, 4f, 42f), new Color(0.2f, 0.2f, 0.22f));
-            CreateBox("Wall_W", new Vector3(-20.5f, 2f, 0f), new Vector3(1f, 4f, 42f), new Color(0.2f, 0.2f, 0.22f));
+            CreateBox("Wall_N_Left", new Vector3(-9.5f, fy + 2f, 20.5f), new Vector3(23f, 4f, 1f), new Color(0.2f, 0.2f, 0.22f));
+            CreateBox("Wall_N_Right", new Vector3(13.5f, fy + 2f, 20.5f), new Vector3(15f, 4f, 1f), new Color(0.2f, 0.2f, 0.22f));
+            // الجدار الجنوبي ببوابة مفتوحة (x من -3 إلى 3) يدخل منها اللاعب من المرج
+            CreateBox("Wall_S_Left", new Vector3(-12f, fy + 2f, -20.5f), new Vector3(18f, 4f, 1f), new Color(0.2f, 0.2f, 0.22f));
+            CreateBox("Wall_S_Right", new Vector3(12f, fy + 2f, -20.5f), new Vector3(18f, 4f, 1f), new Color(0.2f, 0.2f, 0.22f));
+            CreateBox("Wall_E", new Vector3(20.5f, fy + 2f, 0f), new Vector3(1f, 4f, 42f), new Color(0.2f, 0.2f, 0.22f));
+            CreateBox("Wall_W", new Vector3(-20.5f, fy + 2f, 0f), new Vector3(1f, 4f, 42f), new Color(0.2f, 0.2f, 0.22f));
 
-            CreateBox("Crate_A", new Vector3(5f, 1f, 3f), new Vector3(2f, 2f, 2f), new Color(0.35f, 0.3f, 0.25f));
-            CreateBox("Crate_B", new Vector3(-6f, 1f, -2f), new Vector3(2f, 2f, 2f), new Color(0.35f, 0.3f, 0.25f));
-            CreateBox("Crate_C", new Vector3(2f, 1f, 9f), new Vector3(2f, 2f, 2f), new Color(0.35f, 0.3f, 0.25f));
-
-            var lightGo = new GameObject("Sun");
-            var light = lightGo.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.intensity = 0.7f;
-            light.color = new Color(0.8f, 0.78f, 0.9f);
-            lightGo.transform.rotation = Quaternion.Euler(55f, -35f, 0f);
-
-            RenderSettings.fog = true;
-            RenderSettings.fogColor = new Color(0.12f, 0.12f, 0.16f);
-            RenderSettings.fogDensity = 0.015f;
-            RenderSettings.ambientLight = new Color(0.25f, 0.25f, 0.32f);
+            CreateBox("Crate_A", new Vector3(5f, fy + 1f, 3f), new Vector3(2f, 2f, 2f), new Color(0.35f, 0.3f, 0.25f));
+            CreateBox("Crate_B", new Vector3(-6f, fy + 1f, -2f), new Vector3(2f, 2f, 2f), new Color(0.35f, 0.3f, 0.25f));
+            CreateBox("Crate_C", new Vector3(2f, fy + 1f, 9f), new Vector3(2f, 2f, 2f), new Color(0.35f, 0.3f, 0.25f));
         }
 
         private PlayerAvatar BuildPlayer(Vector3 position)

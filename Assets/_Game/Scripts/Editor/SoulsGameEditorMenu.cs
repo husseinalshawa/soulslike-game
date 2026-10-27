@@ -58,6 +58,7 @@ namespace SoulsGame.EditorTools
                 w.light = new AttackTimeline(0.6f, 0.3f, 1.2f, 1.2f);
             });
             CreateAssetIfMissing<ProgressionData>("Assets/_Game/Data/Progression.asset", null);
+            CreateAssetIfMissing<WorldTheme>("Assets/_Game/Data/WorldTheme.asset", null);
             CreateAssetIfMissing<CharacterStats>("Assets/_Game/Data/BossStats.asset", s =>
             {
                 s.maxHealth = 1000f;
@@ -82,6 +83,7 @@ namespace SoulsGame.EditorTools
             bootstrap.enemyWeapon = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Enemy_Sword.asset");
             bootstrap.progressionData = AssetDatabase.LoadAssetAtPath<ProgressionData>("Assets/_Game/Data/Progression.asset");
             bootstrap.bossStats = AssetDatabase.LoadAssetAtPath<CharacterStats>("Assets/_Game/Data/BossStats.asset");
+            bootstrap.worldTheme = AssetDatabase.LoadAssetAtPath<WorldTheme>("Assets/_Game/Data/WorldTheme.asset");
 
             System.IO.Directory.CreateDirectory("Assets/_Game/Scenes");
             EditorSceneManager.SaveScene(scene, "Assets/_Game/Scenes/Arena.unity");

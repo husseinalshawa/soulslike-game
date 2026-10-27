@@ -78,6 +78,23 @@ namespace SoulsGame.Tests
         }
 
         [Test]
+        public void World_BuiltWithTerrain_AndEntitiesGrounded()
+        {
+            var go = new GameObject("Bootstrap");
+            var bootstrap = go.AddComponent<GameBootstrap>();
+
+            Assert.AreEqual(64, bootstrap.TerrainChunkCount, "شبكة 8×8 قطع تضاريس (400م ÷ 50)");
+
+            Vector3 p = bootstrap.Player.transform.position;
+            Assert.GreaterOrEqual(p.y, World.WorldHeightmap.GetHeight(p.x, p.z) - 0.01f,
+                "اللاعب فوق التضاريس لا داخلها");
+
+            Vector3 e = bootstrap.Enemy.transform.position;
+            Assert.GreaterOrEqual(e.y, World.WorldHeightmap.GetHeight(e.x, e.z) - 0.01f,
+                "العدو فوق التضاريس");
+        }
+
+        [Test]
         public void Interact_TogglesMenu_AndIsDeadSafe()
         {
             var go = new GameObject("Bootstrap");

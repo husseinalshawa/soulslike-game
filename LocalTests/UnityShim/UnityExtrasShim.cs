@@ -56,10 +56,35 @@ namespace UnityEngine
         public static Color ambientLight;
     }
 
+    public enum CameraClearFlags { Skybox, SolidColor, Depth, Nothing }
+
     public class Camera : Behaviour
     {
         public static Camera main => null;
         public float fieldOfView;
+        public CameraClearFlags clearFlags;
+        public Color backgroundColor;
+    }
+
+    public class Mesh : Object
+    {
+        public Vector3[] vertices;
+        public int[] triangles;
+        public Color[] colors;
+        public Vector2[] uv;
+        public void RecalculateNormals() { }
+        public void RecalculateBounds() { }
+    }
+
+    public class MeshFilter : Component
+    {
+        public Mesh mesh;
+        public Mesh sharedMesh;
+    }
+
+    public class MeshCollider : Collider
+    {
+        public Mesh sharedMesh;
     }
 
     public class AudioListener : Behaviour { }

@@ -9,7 +9,7 @@ namespace SoulsGame.World
     {
         public const float HalfSize = 200f;
         public const float MaxHeight = 12f;
-        public const float FortRadius = 35f;
+        public const float FortRadius = 50f; // تغطي الساحة وغرفة البوس معاً
         public const float FortPlateauHeight = 4f;
         public const float EdgeBandWidth = 15f;
 
