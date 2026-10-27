@@ -114,6 +114,59 @@ namespace SoulsGame.UI
             return menu;
         }
 
+        // مرئيات شاشة العنوان فوق غطاء أسود كامل (null-safe للبيئات بلا HUD).
+        public static void BuildTitleVisuals(TitleScreen title)
+        {
+            var canvas = GameObject.Find("HUD");
+            if (canvas == null) return;
+
+            var cover = CreateImage(canvas.transform, "TitleCover", new Color(0f, 0f, 0f, 1f));
+            var rect = cover.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.sizeDelta = Vector2.zero;
+            cover.transform.SetAsLastSibling();
+
+            var titleText = MakeLabel(cover.transform, new Vector2(0f, 80f), 46);
+            titleText.text = "THE WITHERED MEADOW";
+            titleText.alignment = TextAnchor.MiddleCenter;
+            titleText.color = new Color(0.85f, 0.7f, 0.25f);
+            titleText.GetComponent<RectTransform>().sizeDelta = new Vector2(900f, 70f);
+
+            var hint = MakeLabel(cover.transform, new Vector2(0f, -40f), 20);
+            hint.text = "Press E to begin";
+            hint.alignment = TextAnchor.MiddleCenter;
+            hint.GetComponent<RectTransform>().sizeDelta = new Vector2(500f, 30f);
+
+            var sensitivity = MakeLabel(cover.transform, new Vector2(0f, -100f), 16);
+            sensitivity.text = "Camera Sensitivity  ◀ 1.00 ▶";
+            sensitivity.alignment = TextAnchor.MiddleCenter;
+            sensitivity.GetComponent<RectTransform>().sizeDelta = new Vector2(500f, 26f);
+
+            title.panel = cover.gameObject;
+            title.cover = cover;
+            title.sensitivityLabel = sensitivity;
+        }
+
+        // غطاء التلاشي الأسود — فوق كل عناصر الواجهة.
+        public static FadeOverlay BuildFadeOverlay()
+        {
+            var canvas = GameObject.Find("HUD");
+            if (canvas == null) return null;
+
+            var cover = CreateImage(canvas.transform, "FadeOverlay", new Color(0f, 0f, 0f, 0f));
+            var rect = cover.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.sizeDelta = Vector2.zero;
+            cover.transform.SetAsLastSibling();
+            cover.raycastTarget = false;
+
+            var overlay = cover.gameObject.AddComponent<FadeOverlay>();
+            overlay.image = cover;
+            return overlay;
+        }
+
         // شريط الحوار أسفل الشاشة: اسم ذهبي + سطر + تلميح E.
         public static DialoguePanel BuildDialoguePanel()
         {
@@ -274,8 +327,21 @@ namespace SoulsGame.UI
 
             var label = go.AddComponent<LoadoutLabel>();
             label.label = text;
+            // لا بناء نص كل إطار: يُبنى فقط حين يتغير أحد الأسماء الثلاثة
+            string cachedWeapon = null, cachedSpell = null, cachedArmor = null, cachedText = "";
             label.Bind(() =>
-                $"{player.Weapons.Current?.weaponName}  |  {player.Spells.Current?.spellName}  |  {player.Armors.Current?.armorName}");
+            {
+                string w = player.Weapons.Current?.weaponName;
+                string s = player.Spells.Current?.spellName;
+                string a = player.Armors.Current?.armorName;
+                if (!ReferenceEquals(w, cachedWeapon) || !ReferenceEquals(s, cachedSpell) ||
+                    !ReferenceEquals(a, cachedArmor))
+                {
+                    cachedWeapon = w; cachedSpell = s; cachedArmor = a;
+                    cachedText = $"{w}  |  {s}  |  {a}";
+                }
+                return cachedText;
+            });
         }
 
         private static void BuildSoulsCounter(Transform parent, PlayerAvatar player)
@@ -358,11 +424,10 @@ namespace SoulsGame.UI
             return screen;
         }
 
-        public static EnemyHealthBar BuildEnemyBar(EnemyAvatar enemy, LockOnSystem lockOn)
+        // شريط واحد حر في العالم — يتموضع فوق هدف القفل الحالي كل إطار.
+        public static EnemyHealthBar BuildEnemyBar(LockOnSystem lockOn)
         {
-            var canvasGo = new GameObject("EnemyHealthBar");
-            canvasGo.transform.SetParent(enemy.transform, false);
-            canvasGo.transform.localPosition = new Vector3(0f, 1.6f, 0f);
+            var canvasGo = new GameObject("LockOnHealthBar");
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             var canvasRect = canvasGo.GetComponent<RectTransform>();
@@ -380,7 +445,6 @@ namespace SoulsGame.UI
             fillRect.sizeDelta = Vector2.zero;
 
             var bar = canvasGo.AddComponent<EnemyHealthBar>();
-            bar.owner = enemy;
             bar.lockOn = lockOn;
             bar.fill = fillRect;
             bar.root = background.gameObject;

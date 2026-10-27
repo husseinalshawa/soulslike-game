@@ -62,6 +62,13 @@ namespace SoulsGame.Enemies
 
             Damageable.PoiseBroken += () => Brain.NotifyPoiseBroken();
             Damageable.Died += OnDied;
+
+            // وميض الإصابة: أبيض 0.1ث ثم عودة للون النوع
+            var flash = gameObject.AddComponent<Feel.HitFlash>();
+            flash.target = GetComponent<Renderer>();
+            flash.baseColor = baseTint;
+            flash.owner = Damageable;
+            Damageable.Damaged += _ => flash.Begin();
         }
 
         private void OnEnable() => LockOnSystem.Register(this);

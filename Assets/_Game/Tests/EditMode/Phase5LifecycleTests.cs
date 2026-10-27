@@ -57,6 +57,7 @@ namespace SoulsGame.Tests
             var go = new GameObject("Bootstrap");
             var bootstrap = go.AddComponent<GameBootstrap>();
             var loop = bootstrap.Loop;
+            loop.BeginGame(); // تجاوز شاشة العنوان
             var player = bootstrap.Player;
 
             // 1) اكتشاف الكهف والتقاط الجرس

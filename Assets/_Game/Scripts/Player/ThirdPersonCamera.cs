@@ -19,6 +19,12 @@ namespace SoulsGame.Player
         public Transform followTarget;
         public LockOnSystem lockOn;
 
+        // اهتزاز الإصابات الثقيلة/كسر الحرس/أرضية البوس — حتمي ومختبَر
+        public Feel.ShakeLogic Shake { get; } = new Feel.ShakeLogic();
+
+        // مضاعف حساسية النظرة (ماوس وعصا معاً) — من إعداد شاشة العنوان
+        public float SensitivityMultiplier { get; set; } = 1f;
+
         // يغذيهما PlayerAvatar كل إطار من إدخال النظرة.
         public Vector2 MouseLook { get; set; }
         public Vector2 StickLook { get; set; }
@@ -42,14 +48,17 @@ namespace SoulsGame.Player
             else
             {
                 // دلتا الماوس لكل-إطار أصلاً — ضربها في dt يجعل الحساسية تتبع الـ FPS
-                yaw += MouseLook.x * MouseSensitivity + StickLook.x * StickSensitivityPerSecond * Time.deltaTime;
-                float pitchDelta = MouseLook.y * MouseSensitivity + StickLook.y * StickSensitivityPerSecond * Time.deltaTime;
+                yaw += (MouseLook.x * MouseSensitivity + StickLook.x * StickSensitivityPerSecond * Time.deltaTime)
+                    * SensitivityMultiplier;
+                float pitchDelta = (MouseLook.y * MouseSensitivity + StickLook.y * StickSensitivityPerSecond * Time.deltaTime)
+                    * SensitivityMultiplier;
                 pitch = Mathf.Clamp(pitch - pitchDelta, MinPitch, MaxPitch);
             }
 
             Quaternion orbit = Quaternion.Euler(pitch, yaw, 0f);
             Vector3 aimPoint = followTarget.position + Vector3.up * AimHeight;
-            transform.position = aimPoint - orbit * Vector3.forward * Distance + Vector3.up * (Height - AimHeight);
+            transform.position = aimPoint - orbit * Vector3.forward * Distance + Vector3.up * (Height - AimHeight)
+                + Shake.Tick(Time.deltaTime);
             transform.rotation = Quaternion.LookRotation(aimPoint - transform.position, Vector3.up);
         }
     }

@@ -22,6 +22,8 @@ namespace SoulsGame.Combat
 
         public bool TrySpend(float amount)
         {
+            if (amount <= 0f)
+                return true; // مهارة مجانية/فارغة لا تصفّر مؤقت التجدد
             if (amount > Current)
                 return false;
             Current -= amount;

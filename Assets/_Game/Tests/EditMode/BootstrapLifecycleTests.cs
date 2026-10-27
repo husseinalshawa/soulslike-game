@@ -172,6 +172,7 @@ namespace SoulsGame.Tests
         {
             var go = new GameObject("Bootstrap");
             var bootstrap = go.AddComponent<GameBootstrap>();
+            bootstrap.Loop.BeginGame(); // تجاوز شاشة العنوان
             var player = bootstrap.Player;
 
             Assert.IsNotNull(bootstrap.Horse, "الحصان بُني");
@@ -215,6 +216,7 @@ namespace SoulsGame.Tests
             var go = new GameObject("Bootstrap");
             var bootstrap = go.AddComponent<GameBootstrap>();
             var loop = bootstrap.Loop;
+            loop.BeginGame(); // تجاوز شاشة العنوان
 
             loop.RestAtGrace(0);
             Assert.IsTrue(loop.levelUpMenu.IsOpen, "الراحة تفتح القائمة");

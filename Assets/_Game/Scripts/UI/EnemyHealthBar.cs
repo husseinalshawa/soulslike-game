@@ -4,31 +4,39 @@ using UnityEngine;
 
 namespace SoulsGame.UI
 {
-    // شريط صحة فوق رأس العدو — يظهر فقط عندما يكون هدف الـ lock-on الحالي،
-    // ويواجه الكاميرا دائماً (billboard).
+    // شريط صحة واحد يتبع هدف الـ lock-on الحالي أياً كان (جندي/مرتّل) —
+    // البوس مستثنى (له شريطه الكبير)، ويواجه الكاميرا دائماً (billboard).
     public class EnemyHealthBar : MonoBehaviour
     {
-        public EnemyAvatar owner;
         public LockOnSystem lockOn;
         public RectTransform fill;
         public GameObject root;
 
-        private void LateUpdate()
+        // يطبّق الظهور والامتلاء لهدف معيّن ويعيد هل الشريط ظاهر —
+        // مفصولة عن LateUpdate لتُختبر في الشيم.
+        public bool Refresh(ITargetable target)
         {
-            if (owner == null || root == null)
-                return;
-
-            bool visible = lockOn != null && ReferenceEquals(lockOn.CurrentTarget, owner) && owner.IsAlive;
-            root.SetActive(visible);
+            var enemy = target as EnemyAvatar; // البوس ليس EnemyAvatar — يُستبعد
+            bool visible = enemy != null && enemy.IsAlive;
+            if (root != null)
+                root.SetActive(visible);
             if (!visible)
-                return;
+                return false;
 
-            float pct = Mathf.Clamp01(owner.Damageable.Health.Current / owner.Damageable.Health.Max);
+            transform.position = enemy.transform.position + Vector3.up * 2.2f;
+            float pct = Mathf.Clamp01(enemy.Damageable.Health.Current / enemy.Damageable.Health.Max);
             if (fill != null)
                 fill.localScale = new Vector3(pct, 1f, 1f);
+            return true;
+        }
 
+        private void LateUpdate()
+        {
+            if (!Refresh(lockOn != null ? lockOn.CurrentTarget : null))
+                return;
             if (Camera.main != null)
-                transform.rotation = Quaternion.LookRotation(transform.position - Camera.main.transform.position, Vector3.up);
+                transform.rotation = Quaternion.LookRotation(
+                    transform.position - Camera.main.transform.position, Vector3.up);
         }
     }
 }

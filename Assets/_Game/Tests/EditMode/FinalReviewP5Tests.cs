@@ -18,6 +18,7 @@ namespace SoulsGame.Tests
             var npc = npcGo.AddComponent<NpcAvatar>();
             npc.Questline = questline;
             bootstrap.Loop.npcs = new[] { npc };
+            bootstrap.Loop.BeginGame(); // تجاوز شاشة العنوان
             return npc;
         }
 
@@ -134,6 +135,7 @@ namespace SoulsGame.Tests
         {
             var go = new GameObject("Bootstrap");
             var bootstrap = go.AddComponent<GameBootstrap>();
+            bootstrap.Loop.BeginGame(); // تجاوز شاشة العنوان
             var player = bootstrap.Player;
 
             player.transform.position = new Vector3(50f, 5f, -80f); // مرج مفتوح

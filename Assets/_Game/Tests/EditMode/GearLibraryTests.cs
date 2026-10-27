@@ -32,7 +32,7 @@ namespace SoulsGame.Tests
         {
             var w = GearLibrary.TwinDaggers();
 
-            Assert.AreEqual(12f, w.lightDamage);
+            Assert.AreEqual(16f, w.lightDamage, "موازنة المرحلة 6 (التقرير: 12 تخلفت في كل النزالات)");
             Assert.AreEqual(5, w.comboLength);
             Assert.AreEqual(1.0f, w.reach);
             Assert.AreEqual(3, w.skill.hitCount, "الوابل ثلاث إصابات");

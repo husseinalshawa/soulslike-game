@@ -58,7 +58,7 @@ namespace SoulsGame.Data
             w.weaponName = "Twin Daggers";
             w.reach = 1.0f;
             w.hitboxWidth = 0.18f;
-            w.lightDamage = 12f; w.lightPoiseDamage = 6f; w.lightStaminaCost = 8f;
+            w.lightDamage = 16f; w.lightPoiseDamage = 6f; w.lightStaminaCost = 8f; // موازنة المرحلة 6: 12 كانت تتخلف في كل نزال
             w.light = new AttackTimeline(0.15f, 0.12f, 0.25f, 0.30f);
             w.heavyDamage = 30f; w.heavyPoiseDamage = 15f; w.heavyStaminaCost = 18f;
             w.heavy = new AttackTimeline(0.35f, 0.20f, 0.45f, 0.60f);
@@ -81,7 +81,7 @@ namespace SoulsGame.Data
         {
             var w = ScriptableObject.CreateInstance<WeaponData>();
             w.weaponName = "Spear";
-            w.reach = 2.4f;
+            w.reach = 2.4f; // شحنة المهارة 2.4 + المدى 2.4 = 4.8م الموعودة (موازنة المرحلة 6)
             w.hitboxWidth = 0.15f;
             w.lightDamage = 22f; w.lightPoiseDamage = 12f; w.lightStaminaCost = 14f;
             w.light = new AttackTimeline(0.30f, 0.22f, 0.45f, 0.60f);
@@ -95,7 +95,7 @@ namespace SoulsGame.Data
                 timeline = new AttackTimeline(0.35f, 0.30f, 0.60f, 0.90f),
                 damage = 45f,
                 poiseDamage = 35f,
-                dashDistance = 2f,
+                dashDistance = 2.4f,
                 radius = 0f,
                 hitCount = 1
             };

@@ -74,6 +74,7 @@ namespace SoulsGame.Tests
             var npc = npcGo.AddComponent<NpcAvatar>();
             npc.Questline = questline;
             bootstrap.Loop.npcs = new[] { npc };
+            bootstrap.Loop.BeginGame(); // تجاوز شاشة العنوان
             return npc;
         }
 

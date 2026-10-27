@@ -29,6 +29,8 @@ namespace SoulsGame.Core
         public Vector3? altarPosition;
         public DialoguePanel dialoguePanel;
         public Toast banner;
+        public FadeOverlay fadeOverlay;
+        public TitleScreen titleScreen;
         public const float AltarRadius = 2.5f;
         public const int AltarReward = 3000;
 
@@ -60,6 +62,12 @@ namespace SoulsGame.Core
         {
             if (player.Damageable.Health.IsDead)
                 return;
+            // شاشة العنوان أولاً: E الأولى تبدأ اللعبة
+            if (titleScreen != null && titleScreen.IsOpen)
+            {
+                BeginGame();
+                return;
+            }
             if (Dialogue.IsActive)
             {
                 Dialogue.Advance();
@@ -70,20 +78,32 @@ namespace SoulsGame.Core
                 levelUpMenu.Close();
                 return;
             }
-            var npc = NearestNpcInRange();
-            if (npc != null)
+            // لا حوار ولا مذبح من على السرج (الراحة تبقى كما كانت)
+            if (!player.IsRiding)
             {
-                StartDialogue(npc);
-                return;
-            }
-            if (altarPosition.HasValue &&
-                Vector3.Distance(player.transform.position, altarPosition.Value) <= AltarRadius)
-            {
-                InteractAltar();
-                return;
+                var npc = NearestNpcInRange();
+                if (npc != null)
+                {
+                    StartDialogue(npc);
+                    return;
+                }
+                if (altarPosition.HasValue &&
+                    Vector3.Distance(player.transform.position, altarPosition.Value) <= AltarRadius)
+                {
+                    InteractAltar();
+                    return;
+                }
             }
             if (Graces.CanRest(player.transform.position, out int siteId))
                 RestAtGrace(siteId);
+        }
+
+        // بدء اللعبة من شاشة العنوان: تلاشي الغطاء وتحرير الإدخال والعدوان.
+        public void BeginGame()
+        {
+            titleScreen?.BeginGame();
+            player.InputLocked = false;
+            EnemyAvatar.AggroSuppressed = false;
         }
 
         private NpcAvatar NearestNpcInRange()
@@ -200,16 +220,38 @@ namespace SoulsGame.Core
             if (levelUpMenu != null && levelUpMenu.IsOpen)
                 levelUpMenu.Close();
             Dialogue.Abort(); // موت منتصف حوار: جلسة تنتهي بلا فعل إكمال
+            fadeOverlay?.Fade.FadeTo(1f, 0.6f); // تلاشٍ للأسود قبل YOU DIED
             player.Buff.Clear(); // التعزيز يسقط بالموت
             Ledger.Drop(player.transform.position, player.Wallet.TakeAll());
             RefreshStainMarker();
-            deathScreen.Show();
+            // YOU DIED تظهر فوق الأسود الكامل لا تحته — بعد اكتمال التعتيم
+            if (fadeOverlay != null)
+                pendingDeathShow = true;
+            else
+                deathScreen.Show();
+        }
+
+        private bool pendingDeathShow;
+
+        // يراقب اكتمال تعتيم الموت ثم يُظهر YOU DIED — يستدعيه Update،
+        // ومفصول ليُختبر في الشيم.
+        public void ProcessDeathSequence()
+        {
+            if (!pendingDeathShow || fadeOverlay == null)
+                return;
+            if (fadeOverlay.Fade.Done && fadeOverlay.Fade.Alpha >= 1f)
+            {
+                pendingDeathShow = false;
+                deathScreen.Show();
+            }
         }
 
         private void Update()
         {
             if (player == null || player.Damageable.Health.IsDead)
                 return;
+
+            ProcessDeathSequence();
 
             int recovered = Ledger.TryRecover(player.transform.position, RecoverRadius);
             if (recovered > 0)
@@ -269,6 +311,7 @@ namespace SoulsGame.Core
 
         public void Respawn()
         {
+            pendingDeathShow = false;
             if (levelUpMenu != null && levelUpMenu.IsOpen)
                 levelUpMenu.Close();
 
@@ -282,6 +325,7 @@ namespace SoulsGame.Core
             player.Stamina.ResetToFull();
             player.Focus.ResetToFull();
             player.Brain.Revive();
+            fadeOverlay?.Fade.FadeTo(0f, 0.5f); // الكشف بعد العودة
 
             if (enemies != null)
                 foreach (var enemy in enemies)

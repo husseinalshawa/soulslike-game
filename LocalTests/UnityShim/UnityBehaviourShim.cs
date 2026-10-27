@@ -28,6 +28,9 @@ namespace UnityEngine
         public static float Min(float a, float b) => Math.Min(a, b);
         public static float Max(float a, float b) => Math.Max(a, b);
         public static float Abs(float v) => Math.Abs(v);
+        public static float Sign(float v) => v >= 0f ? 1f : -1f;
+        public static int CeilToInt(float v) => (int)Math.Ceiling(v);
+        public static bool Approximately(float a, float b) => Math.Abs(a - b) < 1e-5f;
         public static float Sqrt(float v) => (float)Math.Sqrt(v);
         public static float Sin(float v) => (float)Math.Sin(v);
         public static float Cos(float v) => (float)Math.Cos(v);
@@ -49,6 +52,8 @@ namespace UnityEngine
     {
         public static float deltaTime => 0f;
         public static float time => 0f;
+        public static float unscaledDeltaTime => 0f;
+        public static float timeScale = 1f;
     }
 
     public static class Debug
@@ -94,6 +99,7 @@ namespace UnityEngine
         public Vector3 right = Vector3.right;
         public Vector3 up = Vector3.up;
         public Transform parent;
+        public void SetAsLastSibling() { }
         public void SetParent(Transform parent) { this.parent = parent; }
         public void SetParent(Transform parent, bool worldPositionStays) { this.parent = parent; }
         public void LookAt(Vector3 worldPosition) { }

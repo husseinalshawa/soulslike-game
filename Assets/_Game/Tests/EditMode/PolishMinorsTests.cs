@@ -1,0 +1,252 @@
+using NUnit.Framework;
+using SoulsGame.Combat;
+using SoulsGame.Core;
+using SoulsGame.Data;
+using SoulsGame.Player;
+using UnityEngine;
+
+namespace SoulsGame.Tests
+{
+    // ثانويات المرحلة 6 (1-7): إشعار التبديل، تخزين Cast/Skill،
+    // التزام درع الصفائح، مدى الرمح، حارس FP، إلخ.
+    public class PolishMinorsTests
+    {
+        private static GameBootstrap Build()
+        {
+            var go = new GameObject("Bootstrap");
+            return go.AddComponent<GameBootstrap>();
+        }
+
+        private static PlayerBrain FreshBrain(out StaminaPool stamina, out FocusPool focus,
+            WeaponData weapon = null)
+        {
+            var stats = ScriptableObject.CreateInstance<CharacterStats>();
+            stamina = new StaminaPool(stats.maxStamina, stats.staminaRegenPerSecond,
+                stats.staminaRegenDelay, stats.blockingRegenMultiplier);
+            focus = new FocusPool(60f);
+            return new PlayerBrain(stamina,
+                weapon != null ? weapon : GearLibrary.Longsword(), stats, focus);
+        }
+
+        [Test]
+        public void GearSwitch_RaisesMessage()
+        {
+            var bootstrap = Build();
+            var player = bootstrap.Player;
+            player.AcquireWeapon(GearLibrary.Greatsword());
+
+            string lastMessage = null;
+            player.GearChanged += m => lastMessage = m;
+
+            player.TrySwitchWeapon(); // يرجع للسيف الطويل
+            StringAssert.Contains("Longsword", lastMessage, "رسالة التبديل تسمي السلاح");
+
+            player.TrySwitchSpell();
+            StringAssert.Contains("Edge", lastMessage, "التعويذة الثانية (Glintblade Edge)");
+        }
+
+        [Test]
+        public void CastBufferedDuringAttack_FiresAfterRecovery()
+        {
+            var brain = FreshBrain(out var stamina, out var focus);
+            var bolt = GearLibrary.GlintBolt();
+
+            Assert.IsTrue(brain.RequestLightAttack());
+            // نافذة التخزين 0.2ث كالهجمات: الضغط قرب نهاية الالتزام يُلتقط
+            for (int i = 0; i < 45; i++) brain.Tick(1f / 60f); // 0.75 من أصل 0.90
+            Assert.IsFalse(brain.RequestCast(bolt), "أثناء الالتزام يُخزَّن لا يُنفذ");
+            Assert.AreEqual(PlayerStateId.AttackLight, brain.CurrentState);
+            Assert.AreEqual(60f, focus.Current, "لا خصم FP قبل التنفيذ الفعلي");
+
+            for (int i = 0; i < 20 && brain.CurrentState == PlayerStateId.AttackLight; i++)
+                brain.Tick(1f / 60f);
+
+            Assert.AreEqual(PlayerStateId.Cast, brain.CurrentState,
+                "المخزنة تنفذ عند أول نافذة");
+            Assert.AreEqual(60f - bolt.fpCost, focus.Current, 0.001f, "الخصم لحظة التنفيذ");
+        }
+
+        [Test]
+        public void BufferedCast_WithoutFp_RejectsWithoutStuckState()
+        {
+            var brain = FreshBrain(out _, out var focus);
+            var bolt = GearLibrary.GlintBolt();
+            focus.TrySpend(55f); // يبقى 5 < 12
+
+            int rejected = 0;
+            brain.FocusRejected += () => rejected++;
+
+            brain.RequestLightAttack();
+            for (int i = 0; i < 45; i++) brain.Tick(1f / 60f);
+            brain.RequestCast(bolt); // تُخزَّن قرب النهاية
+            for (int i = 0; i < 20 && brain.CurrentState == PlayerStateId.AttackLight; i++)
+                brain.Tick(1f / 60f);
+
+            Assert.AreEqual(PlayerStateId.Locomotion, brain.CurrentState, "لا حالة عالقة");
+            Assert.AreEqual(1, rejected, "رُفضت عند لحظة التنفيذ بوميض البار");
+        }
+
+        [Test]
+        public void SkillBufferedDuringCast_Fires()
+        {
+            var brain = FreshBrain(out _, out var focus);
+
+            Assert.IsTrue(brain.RequestCast(GearLibrary.GlintBolt()));
+            for (int i = 0; i < 45; i++) brain.Tick(1f / 60f); // 0.75 من إلقاء 0.90
+            Assert.IsFalse(brain.RequestSkill(), "أثناء الإلقاء تُخزَّن");
+
+            for (int i = 0; i < 20 && brain.CurrentState == PlayerStateId.Cast; i++)
+                brain.Tick(1f / 60f);
+
+            Assert.AreEqual(PlayerStateId.Skill, brain.CurrentState,
+                "مهارة مخزنة تنطلق بعد الإلقاء");
+        }
+
+        [Test]
+        public void PlateDodge_CancelPointScalesWithArmor()
+        {
+            // درع ثقيل (مضاعف 1.3): الإلغاء الهجومي عند 0.52 لا 0.4
+            var heavy = FreshBrain(out _, out _);
+            heavy.SetDodgeProfile(1.3f);
+            Assert.IsTrue(heavy.RequestDodge());
+            for (int i = 0; i < 30; i++) heavy.Tick(1f / 60f); // 0.50ث
+            Assert.IsFalse(heavy.RequestLightAttack(), "قبل 0.52: ما زال ملتزماً");
+            Assert.AreEqual(PlayerStateId.Dodge, heavy.CurrentState);
+            for (int i = 0; i < 3; i++) heavy.Tick(1f / 60f); // 0.55ث — الفعل المخزن ينطلق
+            Assert.AreEqual(PlayerStateId.AttackLight, heavy.CurrentState,
+                "بعد نقطة الإلغاء الممددة ينفذ المخزن");
+
+            // درع خفيف (1.0): الإلغاء عند 0.4 كما كان
+            var light = FreshBrain(out _, out _);
+            Assert.IsTrue(light.RequestDodge());
+            for (int i = 0; i < 25; i++) light.Tick(1f / 60f); // 0.416ث
+            Assert.IsTrue(light.RequestLightAttack(), "خفيف: الإلغاء المبكر القديم");
+        }
+
+        [Test]
+        public void Spear_SkillDash2_4()
+        {
+            Assert.AreEqual(2.4f, GearLibrary.Spear().skill.dashDistance,
+                "شحنة الرمح 2.4 + مدى 2.4 = 4.8م الموعودة");
+        }
+
+        // ---- شاشة العنوان ----
+
+        [Test]
+        public void GameStarts_Locked_TitleOpen()
+        {
+            var bootstrap = Build();
+            Assert.IsNotNull(bootstrap.Loop.titleScreen, "شاشة العنوان مبنية");
+            Assert.IsTrue(bootstrap.Loop.titleScreen.IsOpen, "اللعبة تفتح على عنوانها");
+            Assert.IsTrue(bootstrap.Player.InputLocked, "الإدخال مقفول قبل البدء");
+            Assert.IsTrue(Enemies.EnemyAvatar.AggroSuppressed, "لا عدوان قبل البدء");
+        }
+
+        [Test]
+        public void Interact_BeginsGame_Once()
+        {
+            var bootstrap = Build();
+            var loop = bootstrap.Loop;
+
+            loop.HandleInteract(); // E الأولى: بدء
+            Assert.IsFalse(loop.titleScreen.IsOpen);
+            Assert.IsFalse(bootstrap.Player.InputLocked, "تحرر الإدخال");
+            Assert.IsFalse(Enemies.EnemyAvatar.AggroSuppressed);
+
+            loop.HandleInteract(); // الثانية: الأولويات العادية (جلوس عند نقطة البداية)
+            Assert.IsTrue(loop.levelUpMenu.IsOpen, "E التالية تتصرف طبيعياً");
+        }
+
+        [Test]
+        public void Sensitivity_AppliesToCamera()
+        {
+            var bootstrap = Build();
+            bootstrap.Loop.titleScreen.AdjustSensitivity(+1);
+            Assert.AreEqual(1.25f, bootstrap.Player.cameraRig.SensitivityMultiplier, 0.001f,
+                "الحساسية تطبق فوراً على الكاميرا");
+        }
+
+        // ---- الثانويات 8-12 ----
+
+        [Test]
+        public void NoDialogue_NoAltar_WhileRiding()
+        {
+            var bootstrap = Build();
+            var loop = bootstrap.Loop;
+            loop.BeginGame(); // تجاوز شاشة العنوان
+            var player = bootstrap.Player;
+
+            player.transform.position = new Vector3(50f, 5f, -80f);
+            Assert.IsTrue(player.TrySummonHorse());
+
+            // شخصية تحت السرج مباشرة: E لا يفتح حواراً راكباً
+            var npcGo = new GameObject("Npc_Test");
+            npcGo.transform.position = player.transform.position;
+            var npc = npcGo.AddComponent<Story.NpcAvatar>();
+            npc.Questline = Story.StoryLibrary.Mara();
+            loop.npcs = new[] { npc };
+            loop.HandleInteract();
+            Assert.IsFalse(loop.Dialogue.IsActive, "لا حوار من على السرج");
+
+            // المذبح كذلك: راكباً فوقه بالرماد لا يضع
+            player.KeyItems.Add(Story.StoryLibrary.WardensAshes);
+            loop.npcs = null;
+            player.transform.position = loop.altarPosition.Value;
+            loop.HandleInteract();
+            Assert.IsFalse(loop.Story.IsSet(Story.StoryFlag.AshPlaced), "لا مذبح من على السرج");
+        }
+
+        [Test]
+        public void ThemeShift_TicksToCompletion()
+        {
+            var bootstrap = Build();
+            bootstrap.Loop.Story.Set(Story.StoryFlag.AshPlaced); // يبدأ التحول
+            Assert.IsNotNull(bootstrap.ActiveThemeShift);
+
+            for (int i = 0; i < 17; i++)
+                bootstrap.TickThemeShift(0.5f); // 8.5ث > 8
+
+            Assert.IsNull(bootstrap.ActiveThemeShift, "التحول يكتمل ويتوقف");
+        }
+
+        [Test]
+        public void MarshWater_IsCylinder()
+        {
+            var bootstrap = Build();
+            var water = bootstrap.MarshWater;
+            Assert.IsNotNull(water, "سطح الماء مبني");
+            Assert.IsNotNull(water.GetComponent<CapsuleCollider>(),
+                "أسطوانة لا مكعب — لا زوايا ماء طافية خارج الحوض");
+            Assert.AreEqual(70f, water.transform.localScale.x, 0.001f);
+        }
+
+        [Test]
+        public void LockOnBar_RefreshFollowsTarget()
+        {
+            var bootstrap = Build();
+            var bar = bootstrap.LockOnBar;
+            Assert.IsNotNull(bar, "شريط هدف واحد يتبع القفل");
+
+            Assert.IsFalse(bar.Refresh(null), "بلا قفل: مخفي");
+            Assert.IsTrue(bar.Refresh(bootstrap.AllEnemies[3]), "أي جندي مقفول يظهر شريطه");
+            Assert.IsTrue(bar.Refresh(bootstrap.AllEnemies[8]), "والمرتّل كذلك");
+            Assert.IsFalse(bar.Refresh(bootstrap.Boss), "البوس لشريطه الكبير وحده");
+
+            bootstrap.AllEnemies[3].Damageable.Health.TakeDamage(100000f);
+            Assert.IsFalse(bar.Refresh(bootstrap.AllEnemies[3]), "موت الهدف يخفيه فوراً");
+        }
+
+        [Test]
+        public void FocusPool_TrySpendZero_KeepsRegenTimer()
+        {
+            var pool = new FocusPool(60f);
+            Assert.IsTrue(pool.TrySpend(10f));
+            pool.Tick(1.9f); // مهلة التركيز 2.0 لم تكتمل بعد
+
+            Assert.IsTrue(pool.TrySpend(0f), "صفر يُقبل دائماً");
+            pool.Tick(0.2f); // المجموع 2.1 > المهلة — التجدد بدأ
+
+            Assert.Greater(pool.Current, 50f, "صرف الصفر لم يصفّر مؤقت التجدد");
+        }
+    }
+}

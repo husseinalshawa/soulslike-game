@@ -26,7 +26,10 @@ namespace UnityEngine
         public Vector2 anchoredPosition;
     }
 
-    public class Font : Object { }
+    public class Font : Object
+    {
+        public Material material = new Material();
+    }
 
     public enum TextAnchor
     {
@@ -37,7 +40,9 @@ namespace UnityEngine
 
     public static class Resources
     {
-        public static T GetBuiltinResource<T>(string path) where T : Object => null;
+        private static readonly Font builtinFont = new Font();
+        public static T GetBuiltinResource<T>(string path) where T : Object =>
+            typeof(T) == typeof(Font) ? builtinFont as T : null;
         public static T Load<T>(string path) where T : Object => null;
     }
 }
@@ -64,6 +69,7 @@ namespace UnityEngine.UI
     public class Graphic : Behaviour
     {
         public Color color;
+        public bool raycastTarget = true;
         public RectTransform rectTransform => GetComponent<RectTransform>();
     }
 

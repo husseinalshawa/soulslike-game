@@ -54,9 +54,14 @@ namespace SoulsGame.Core
         public GameLoop Loop { get; private set; }
         public Story.KeyItemPickup BellPickup { get; private set; }
         public ThemeShift ActiveThemeShift { get; private set; }
+        public Feel.HitStopLogic HitStop { get; } = new Feel.HitStopLogic();
+        public UI.EnemyHealthBar LockOnBar { get; private set; }
+        public GameObject MarshWater { get; private set; }
 
         private UI.Toast victoryBanner;
         private WorldTheme workingTheme;
+        private Light cachedSun;
+        private Camera cachedCamera;
 
         private void Awake()
         {
@@ -157,6 +162,54 @@ namespace SoulsGame.Core
             BuildHorse();
             BuildGearPickups();
             BuildChapelAndStory();
+            WireFeel();
+            BuildTitleScreen();
+        }
+
+        // اللعبة تفتح على عنوانها: غطاء أسود + إدخال مقفول حتى أول E.
+        private void BuildTitleScreen()
+        {
+            var titleGo = new GameObject("TitleScreen");
+            var title = titleGo.AddComponent<UI.TitleScreen>();
+            title.cameraRig = Player.cameraRig;
+            UI.HudBuilder.BuildTitleVisuals(title);
+            Loop.titleScreen = title;
+            Player.InputLocked = true;
+            EnemyAvatar.AggroSuppressed = true;
+        }
+
+        // ربط الإحساس: hit-stop حسب حالة عقل اللاعب، واهتزازات الكاميرا.
+        private void WireFeel()
+        {
+            var rig = Player.cameraRig;
+            // موضع الرقم فوق رأس الهدف: الجندي +1.6، البوس (ضعف الطول) +3.8
+            System.Action<Vector3, float> onEnemyHit = (numberSpawnPosition, amount) =>
+            {
+                var state = Player.Brain.CurrentState;
+                bool heavy = state == PlayerStateId.AttackHeavy || state == PlayerStateId.Skill;
+                HitStop.Request(heavy ? 0.09f : 0.06f);
+                if (heavy && rig != null)
+                    rig.Shake.Shake(0.15f, 0.25f);
+                Feel.DamageNumber.Spawn(numberSpawnPosition, amount);
+            };
+            foreach (var enemy in AllEnemies)
+                if (enemy != null)
+                {
+                    var self = enemy; // التقاط النسخة لا متغير الحلقة
+                    self.Damageable.Damaged += packet =>
+                        onEnemyHit(self.transform.position + Vector3.up * 1.6f, packet.HealthDamage);
+                }
+            if (Boss != null)
+            {
+                Boss.Damageable.Damaged += packet =>
+                    onEnemyHit(Boss.transform.position + Vector3.up * 3.8f, packet.HealthDamage);
+                Boss.SlamLanded += () => rig?.Shake.Shake(0.35f, 0.4f);
+            }
+            Loop.fadeOverlay = UI.HudBuilder.BuildFadeOverlay();
+            Player.Damageable.Damaged += _ => HitStop.Request(0.05f);
+            Player.Brain.GuardBroken += () => rig?.Shake.Shake(0.25f, 0.3f);
+            // إشعار تبديل العتاد (Tab/G/V) باسم القطعة
+            Player.GearChanged += message => Loop.toast?.Show(message);
         }
 
         // الكنيسة الغارقة والقصة: البناء، موقع الراحة الرابع، الماء الضحل،
@@ -165,6 +218,7 @@ namespace SoulsGame.Core
         {
             var parent = new GameObject("SunkenChapel");
             var chapel = WorldBuilder.BuildChapel(parent.transform, worldTheme);
+            MarshWater = chapel.WaterPlane;
 
             // موقع الراحة الرابع (site 3) على أرض جافة قبالة المستنقع من الجنوب-الغرب
             // (خارج الحوض ومنطقة دمجه ومربع سطح الماء — لا راحة غارقة)
@@ -265,14 +319,31 @@ namespace SoulsGame.Core
 
         private void Update()
         {
+            // hit-stop يُدار بزمن غير مقيس كي لا يجمد نفسه
+            HitStop.Tick(Time.unscaledDeltaTime);
+            Time.timeScale = HitStop.CurrentScale;
+
+            TickThemeShift(Time.deltaTime);
+        }
+
+        // تكّة تحول اللون — مفصولة عن Update لتُختبر في الشيم، وبكاش
+        // للشمس والكاميرا (لا GameObject.Find كل إطار).
+        public void TickThemeShift(float dt)
+        {
             if (ActiveThemeShift == null)
                 return;
-            ActiveThemeShift.Tick(Time.deltaTime);
+            ActiveThemeShift.Tick(dt);
             var blended = ActiveThemeShift.Blend(workingTheme);
-            WorldBuilder.ApplyTheme(blended);
-            var camera = Camera.main;
-            if (camera != null)
-                camera.backgroundColor = blended.skyColor;
+            if (cachedSun == null)
+            {
+                var sunGo = GameObject.Find("Sun");
+                cachedSun = sunGo != null ? sunGo.GetComponent<Light>() : null;
+            }
+            if (cachedCamera == null)
+                cachedCamera = Camera.main;
+            WorldBuilder.ApplyThemeTo(blended, cachedSun);
+            if (cachedCamera != null)
+                cachedCamera.backgroundColor = blended.skyColor;
             if (ActiveThemeShift.Done)
                 ActiveThemeShift = null; // اكتمل — السمة الدافئة مطبقة
         }
@@ -428,7 +499,7 @@ namespace SoulsGame.Core
         private void BuildHudAndGameLoop()
         {
             var (_, _, deathScreen) = UI.HudBuilder.BuildPlayerHud(Player);
-            UI.HudBuilder.BuildEnemyBar(Enemy, Player.lockOn);
+            LockOnBar = UI.HudBuilder.BuildEnemyBar(Player.lockOn);
 
             Loop = gameObject.AddComponent<GameLoop>();
             Loop.Initialize(Player, AllEnemies, deathScreen);
