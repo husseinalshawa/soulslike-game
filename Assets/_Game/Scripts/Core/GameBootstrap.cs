@@ -29,6 +29,7 @@ namespace SoulsGame.Core
                 enemyStats = ScriptableObject.CreateInstance<CharacterStats>();
                 enemyStats.maxHealth = 150f;
                 enemyStats.maxPoise = 30f;
+                enemyStats.soulsReward = 100;
             }
             if (enemyWeapon == null)
             {
@@ -107,6 +108,7 @@ namespace SoulsGame.Core
             enemy.patrolB = patrolB;
 
             go.SetActive(true);
+            enemy.Damageable.Died += () => Player.Wallet.Add(enemyStats.soulsReward);
             return enemy;
         }
 

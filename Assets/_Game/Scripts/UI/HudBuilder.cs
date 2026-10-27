@@ -26,7 +26,36 @@ namespace SoulsGame.UI
             player.Brain.StaminaRejected += stamina.Flash;
 
             var death = BuildDeathScreen(canvasGo.transform);
+            BuildSoulsCounter(canvasGo.transform, player);
             return (health, stamina, death);
+        }
+
+        private static void BuildSoulsCounter(Transform parent, PlayerAvatar player)
+        {
+            var background = CreateImage(parent, "SoulsCounter", new Color(0f, 0f, 0f, 0.6f));
+            var rect = background.rectTransform;
+            rect.anchorMin = new Vector2(1f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(1f, 0f);
+            rect.anchoredPosition = new Vector2(-30f, 30f);
+            rect.sizeDelta = new Vector2(160f, 34f);
+
+            var textGo = new GameObject("Value");
+            textGo.transform.SetParent(background.transform, false);
+            var text = textGo.AddComponent<Text>();
+            text.text = "0";
+            text.fontSize = 22;
+            text.alignment = TextAnchor.MiddleRight;
+            text.color = new Color(0.85f, 0.8f, 0.6f);
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var textRect = textGo.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = new Vector2(1f, 1f);
+            textRect.sizeDelta = new Vector2(-16f, 0f);
+
+            var counter = background.gameObject.AddComponent<SoulsCounter>();
+            counter.label = text;
+            counter.Bind(() => player.Wallet.Current);
         }
 
         private static ResourceBar BuildBar(Transform parent, string name,

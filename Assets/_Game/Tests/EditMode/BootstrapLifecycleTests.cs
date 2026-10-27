@@ -23,5 +23,19 @@ namespace SoulsGame.Tests
             Assert.IsNotNull(bootstrap.Enemy, "العدو بُني");
             Assert.IsNotNull(bootstrap.Enemy.Brain, "عقل العدو تهيأ");
         }
+
+        [Test]
+        public void SoulsEconomy_WiredIntoScene()
+        {
+            var go = new GameObject("Bootstrap");
+            var bootstrap = go.AddComponent<GameBootstrap>();
+
+            Assert.IsNotNull(bootstrap.Player.Wallet, "المحفظة تهيأت");
+            Assert.AreEqual(0, bootstrap.Player.Wallet.Current);
+
+            bootstrap.Enemy.Damageable.Health.TakeDamage(1000f); // قتل الجندي
+
+            Assert.AreEqual(100, bootstrap.Player.Wallet.Current, "قتل الجندي يمنح 100 روح");
+        }
     }
 }

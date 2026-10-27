@@ -1,5 +1,6 @@
 using SoulsGame.Combat;
 using SoulsGame.Data;
+using SoulsGame.Progression;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -18,6 +19,7 @@ namespace SoulsGame.Player
 
         public PlayerBrain Brain { get; private set; }
         public StaminaPool Stamina { get; private set; }
+        public SoulsWallet Wallet { get; private set; }
         public Damageable Damageable { get; private set; }
         public PlayerControls Controls { get; private set; }
 
@@ -33,6 +35,7 @@ namespace SoulsGame.Player
                 stats.staminaRegenDelay, stats.blockingRegenMultiplier);
             Stamina.SetSprintCost(stats.sprintStaminaPerSecond);
             Brain = new PlayerBrain(Stamina, weapon, stats);
+            Wallet = new SoulsWallet();
 
             Controls = new PlayerControls();
             Controls.Enable();
