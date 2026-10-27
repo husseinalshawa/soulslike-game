@@ -22,6 +22,17 @@ namespace SoulsGame.Core
         public CharacterStats bossStats;
         public WorldTheme worldTheme;
 
+        [Tooltip("عتاد المرحلة 4: أصول من المشروع تصل للعالم كما هي — الفارغ يُبنى من GearLibrary")]
+        public WeaponData greatswordData;
+        public WeaponData twinDaggersData;
+        public WeaponData spearData;
+        public WeaponData warhammerData;
+        public ArmorData clothArmorData;
+        public ArmorData leatherArmorData;
+        public ArmorData plateArmorData;
+        public SpellData boltSpellData;
+        public SpellData buffSpellData;
+
         public int TerrainChunkCount { get; private set; }
 
         // مواضع محتوى المرج (يستهلكها البناء والنثر كمناطق إقصاء)
@@ -68,6 +79,17 @@ namespace SoulsGame.Core
             }
 
             if (worldTheme == null) worldTheme = ScriptableObject.CreateInstance<WorldTheme>();
+
+            // عتاد المرحلة 4: الأصل المسند من المشهد أولاً، وإلا مكتبة الأرقام المختبرة
+            if (greatswordData == null) greatswordData = GearLibrary.Greatsword();
+            if (twinDaggersData == null) twinDaggersData = GearLibrary.TwinDaggers();
+            if (spearData == null) spearData = GearLibrary.Spear();
+            if (warhammerData == null) warhammerData = GearLibrary.Warhammer();
+            if (clothArmorData == null) clothArmorData = GearLibrary.Cloth();
+            if (leatherArmorData == null) leatherArmorData = GearLibrary.Leather();
+            if (plateArmorData == null) plateArmorData = GearLibrary.Plate();
+            if (boltSpellData == null) boltSpellData = GearLibrary.GlintBolt();
+            if (buffSpellData == null) buffSpellData = GearLibrary.WeaponBuffSpell();
 
             // العالم أولاً: تضاريس + ثيم + نثر + كهف
             var exclusionCenters = new[]
@@ -118,15 +140,15 @@ namespace SoulsGame.Core
             // الترتيب مثبت: [0] السيف العظيم (يعتمده اختبار دورة الحياة)
             Pickups = new[]
             {
-                BuildGearPickup(GearLibrary.Greatsword(), null, new Vector3(2f, fy + 0.6f, 35f)),
-                BuildGearPickup(null, GearLibrary.Plate(), new Vector3(-2f, fy + 0.6f, 35f)),
-                BuildGearPickup(GearLibrary.TwinDaggers(), null,
+                BuildGearPickup(greatswordData, null, new Vector3(2f, fy + 0.6f, 35f)),
+                BuildGearPickup(null, plateArmorData, new Vector3(-2f, fy + 0.6f, 35f)),
+                BuildGearPickup(twinDaggersData, null,
                     new Vector3(caveRoom.x + 3f, caveFloorY + 0.6f, caveRoom.z + 3f)),
-                BuildGearPickup(GearLibrary.Spear(), null,
+                BuildGearPickup(spearData, null,
                     WorldBuilder.OnGround(Camp1Center.x, Camp1Center.z + 3f, 0.6f)),
-                BuildGearPickup(GearLibrary.Warhammer(), null,
+                BuildGearPickup(warhammerData, null,
                     WorldBuilder.OnGround(Camp2Center.x, Camp2Center.z + 3f, 0.6f)),
-                BuildGearPickup(null, GearLibrary.Leather(),
+                BuildGearPickup(null, leatherArmorData,
                     WorldBuilder.OnGround(6f, -95f, 0.6f))
             };
         }
@@ -538,6 +560,9 @@ namespace SoulsGame.Core
             avatar.weapon = playerWeapon;
             avatar.progressionData = progressionData;
             avatar.weaponHitbox = hitbox;
+            avatar.defaultArmor = clothArmorData;
+            avatar.spellBolt = boltSpellData;
+            avatar.spellBuff = buffSpellData;
 
             go.SetActive(true); // الآن تجري Awake وكل الحقول مضبوطة
             return avatar;

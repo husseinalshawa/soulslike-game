@@ -18,7 +18,22 @@ namespace SoulsGame.Player
         // يغذيها PlayerAvatar كل إطار
         public Vector2 MoveInput { get; set; }
         public bool SprintActive { get; set; }
-        public PlayerStateId State { get; set; } = PlayerStateId.Locomotion;
+
+        // مغادرة حالة المهارة (كسر توازن مثلاً) تصفّر بقية الاندفاعة —
+        // وإلا تسربت لمهارة لاحقة بلا اندفاع (Quake/Flurry).
+        public PlayerStateId State
+        {
+            get => state;
+            set
+            {
+                if (value != PlayerStateId.Skill)
+                    skillDashRemaining = 0f;
+                state = value;
+            }
+        }
+        private PlayerStateId state = PlayerStateId.Locomotion;
+
+        public float SkillDashRemaining => skillDashRemaining;
 
         // هدف القفل: عند وجوده يتحول اللاعب لوضع strafe (يواجه الهدف)
         public Transform StrafeTarget { get; set; }

@@ -65,15 +65,19 @@ namespace SoulsGame.Player
             this.focus = focus;
         }
 
-        // التبديل مسموح من الوضع المحايد فقط (لا أثناء التزام)
-        public void SetWeapon(WeaponData newWeapon)
+        // التبديل مسموح من الوضع المحايد فقط (لا أثناء التزام).
+        // يعيد false عند الرفض كي لا يتقدم الغلاف (hitbox/واجهة) على العقل.
+        public bool SetWeapon(WeaponData newWeapon)
         {
             if (newWeapon == null)
-                return;
+                return false;
+            if (ReferenceEquals(weapon, newWeapon))
+                return true;
             if (CurrentState != PlayerStateId.Locomotion && CurrentState != PlayerStateId.Block)
-                return;
+                return false;
             weapon = newWeapon;
             comboIndex = 0;
+            return true;
         }
 
         // ملف تفادي الدرع: يمدد مدة الالتزام، ونافذة الحصانة تبقى مطلقة.

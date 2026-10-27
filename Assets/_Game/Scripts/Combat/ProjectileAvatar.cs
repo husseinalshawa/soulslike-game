@@ -20,24 +20,32 @@ namespace SoulsGame.Combat
             transform.position = origin;
         }
 
-        private void Update()
+        // أهداف القذائف الصالحة: الأحياء المسجلون في الـ lock-on — ما عدا البوس
+        // قبل بدء معركته (لا قنص للمعركة من خلف الضباب وهو خامل).
+        public static List<(object target, Vector3 position, float radius)> CollectCandidates()
         {
-            if (logic == null)
-                return;
-
             var candidates = new List<(object, Vector3, float)>();
             var targets = LockOnSystem.Targets;
             for (int i = 0; i < targets.Count; i++)
             {
                 if (!targets[i].IsAlive)
                     continue;
+                if (targets[i] is Enemies.BossAvatar boss && !boss.FightActive)
+                    continue;
                 var component = targets[i] as Component;
                 var damageable = component != null ? component.GetComponent<Damageable>() : null;
                 if (damageable != null)
                     candidates.Add((damageable, targets[i].Position, TargetRadius));
             }
+            return candidates;
+        }
 
-            object hit = logic.Step(Time.deltaTime, candidates);
+        private void Update()
+        {
+            if (logic == null)
+                return;
+
+            object hit = logic.Step(Time.deltaTime, CollectCandidates());
             transform.position = logic.Position;
 
             if (hit is Damageable target)

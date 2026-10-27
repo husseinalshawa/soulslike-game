@@ -111,6 +111,9 @@ namespace SoulsGame.Player
             return damage + Progression.BonusDamage + Buff.CurrentBonus;
         }
 
+        // ضرر ضربة المهارة: المهارة + التعزيز («ينطبق على السلاح المجهز وقت الضربة»).
+        public float CurrentSkillDamage() => Brain.CurrentSkill.damage + Buff.CurrentBonus;
+
         private void OnSpellReleased(SpellData spell)
         {
             if (spell.isBuff)
@@ -140,7 +143,7 @@ namespace SoulsGame.Player
         private void OnSkillWindowOpen()
         {
             var skill = Brain.CurrentSkill;
-            var packet = new DamagePacket(skill.damage, skill.poiseDamage, transform.position);
+            var packet = new DamagePacket(CurrentSkillDamage(), skill.poiseDamage, transform.position);
 
             if (skill.radius > 0f)
             {
@@ -168,7 +171,9 @@ namespace SoulsGame.Player
         {
             var w = Weapons.Current;
             if (w == null) return;
-            Brain.SetWeapon(w);
+            // ذرية التجهيز: رفض العقل (أثناء التزام/موت) يبقي الـ hitbox على
+            // السلاح القديم — المزامنة تعاد تلقائياً عند العودة للمحايد.
+            if (!Brain.SetWeapon(w)) return;
             if (weaponHitbox != null)
             {
                 // شكل السلاح والـ hitbox يتبعان بيانات السلاح
@@ -216,6 +221,11 @@ namespace SoulsGame.Player
                 motor.State = state;
                 if (state == PlayerStateId.Dodge)
                     motor.BeginDodge();
+                // تبديل/التقاط رُفض أثناء التزام: المخزون تقدم والعقل لا —
+                // العودة للمحايد تلحق العقل والـ hitbox بالمخزون
+                if ((state == PlayerStateId.Locomotion || state == PlayerStateId.Block) &&
+                    !ReferenceEquals(Brain.CurrentWeapon, Weapons.Current))
+                    EquipCurrentWeapon();
             };
         }
 

@@ -148,6 +148,7 @@ namespace SoulsGame.Core
 
             player.Damageable.ResetToFull();
             player.Stamina.ResetToFull();
+            player.Focus.ResetToFull();
             player.Brain.Revive();
 
             if (enemies != null)

@@ -25,6 +25,7 @@ namespace SoulsGame.World
         public int TryCollect(Vector3 playerPosition)
         {
             if (collected || player == null ||
+                player.Damageable.Health.IsDead || // لا التقاط فوق شاشة الموت
                 Vector3.Distance(playerPosition, transform.position) > CollectRadius)
                 return 0;
 
