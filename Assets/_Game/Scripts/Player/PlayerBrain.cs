@@ -189,6 +189,16 @@ namespace SoulsGame.Player
             Enter(PlayerStateId.Death);
         }
 
+        // الإحياء عند إعادة الظهور — المخرج الوحيد من حالة الموت.
+        public void Revive()
+        {
+            if (CurrentState == PlayerStateId.Death)
+            {
+                blockHeld = false;
+                Enter(PlayerStateId.Locomotion);
+            }
+        }
+
         // ---- الزمن ----
 
         public void Tick(float deltaTime)

@@ -26,6 +26,12 @@ namespace SoulsGame.Combat
 
         public void SetSprintCost(float costPerSecond) => sprintCostPerSecond = costPerSecond;
 
+        public void ResetToFull()
+        {
+            Current = Max;
+            delayRemaining = 0f;
+        }
+
         public bool TryConsume(float amount)
         {
             if (amount > Current)

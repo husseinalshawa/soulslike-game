@@ -44,6 +44,16 @@ namespace SoulsGame.Core
             BuildCamera(Player);
             Enemy = BuildEnemy(new Vector3(0f, 1.1f, 5f),
                 new Vector3(-5f, 1.1f, 5f), new Vector3(5f, 1.1f, 5f));
+            BuildHudAndGameLoop();
+        }
+
+        private void BuildHudAndGameLoop()
+        {
+            var (_, _, deathScreen) = UI.HudBuilder.BuildPlayerHud(Player);
+            UI.HudBuilder.BuildEnemyBar(Enemy, Player.lockOn);
+
+            var gameLoop = gameObject.AddComponent<GameLoop>();
+            gameLoop.Initialize(Player, new[] { Enemy }, deathScreen);
         }
 
         private EnemyAvatar BuildEnemy(Vector3 position, Vector3 patrolA, Vector3 patrolB)
