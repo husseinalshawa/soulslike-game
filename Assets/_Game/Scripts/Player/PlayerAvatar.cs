@@ -13,6 +13,8 @@ namespace SoulsGame.Player
         public CharacterStats stats;
         public WeaponData weapon;
         public Hitbox weaponHitbox;
+        public LockOnSystem lockOn;
+        public ThirdPersonCamera cameraRig;
 
         public PlayerBrain Brain { get; private set; }
         public StaminaPool Stamina { get; private set; }
@@ -77,6 +79,10 @@ namespace SoulsGame.Player
             Controls.HeavyAttack.performed += _ => Brain.RequestHeavyAttack();
             Controls.Block.performed += _ => Brain.SetBlockHeld(true);
             Controls.Block.canceled += _ => Brain.SetBlockHeld(false);
+            Controls.LockOn.performed += _ =>
+            {
+                if (lockOn != null) lockOn.Toggle();
+            };
         }
 
         private void Update()
@@ -94,6 +100,12 @@ namespace SoulsGame.Player
             motor.MoveInput = move;
             motor.SprintActive = isSprinting;
             motor.State = Brain.CurrentState;
+
+            Vector2 look = Controls.Look.ReadValue<Vector2>();
+            if (cameraRig != null)
+                cameraRig.LookInput = look;
+            if (lockOn != null)
+                lockOn.ReportLookInput(look);
         }
 
         private void OnDestroy()

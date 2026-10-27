@@ -23,6 +23,31 @@ namespace SoulsGame.Core
 
             BuildArena();
             Player = BuildPlayer(new Vector3(0f, 1.1f, -12f));
+            BuildCamera(Player);
+        }
+
+        private void BuildCamera(PlayerAvatar player)
+        {
+            Camera camera = Camera.main;
+            if (camera == null)
+            {
+                var cameraGo = new GameObject("Main Camera");
+                cameraGo.tag = "MainCamera";
+                camera = cameraGo.AddComponent<Camera>();
+                cameraGo.AddComponent<AudioListener>();
+            }
+
+            var rig = camera.gameObject.AddComponent<ThirdPersonCamera>();
+            rig.followTarget = player.transform;
+
+            var lockOn = player.gameObject.AddComponent<LockOnSystem>();
+            lockOn.motor = player.GetComponent<PlayerMotor>();
+            lockOn.cameraTransform = camera.transform;
+            rig.lockOn = lockOn;
+
+            player.lockOn = lockOn;
+            player.cameraRig = rig;
+            player.GetComponent<PlayerMotor>().cameraTransform = camera.transform;
         }
 
         private void BuildArena()

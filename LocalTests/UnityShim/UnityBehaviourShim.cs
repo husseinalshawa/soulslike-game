@@ -102,6 +102,7 @@ namespace UnityEngine
         public Transform transform => null;
         public bool activeSelf => true;
         public int layer;
+        public string tag;
         public void SetActive(bool value) { }
         public T GetComponent<T>() => default;
         public T AddComponent<T>() where T : Component, new() => new T();

@@ -62,6 +62,8 @@ namespace UnityEngine
         public float fieldOfView;
     }
 
+    public class AudioListener : Behaviour { }
+
     public class Rigidbody : Component
     {
         public bool isKinematic;
