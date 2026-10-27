@@ -103,6 +103,67 @@ namespace SoulsGame.Player
             EquipCurrentArmor();
         }
 
+        // ضرر ضربة السلاح الحالية: السلاح + القوة + التعزيز.
+        public float CurrentAttackDamage(AttackType type)
+        {
+            var w = Brain.CurrentWeapon;
+            float damage = type == AttackType.Heavy ? w.heavyDamage : w.lightDamage;
+            return damage + Progression.BonusDamage + Buff.CurrentBonus;
+        }
+
+        private void OnSpellReleased(SpellData spell)
+        {
+            if (spell.isBuff)
+            {
+                Buff.Activate(spell.buffBonusDamage, spell.buffDuration);
+                return;
+            }
+
+            // قذيفة: نحو هدف القفل أو للأمام
+            Vector3 origin = transform.position + Vector3.up * 1.2f;
+            Vector3 direction = transform.forward;
+            if (lockOn != null && lockOn.CurrentTarget != null)
+                direction = (lockOn.CurrentTarget.Position - origin).normalized;
+
+            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            go.name = "GlintBolt";
+            go.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+            var boltCollider = go.GetComponent<Collider>();
+            if (boltCollider != null) boltCollider.enabled = false;
+            var renderer = go.GetComponent<Renderer>();
+            if (renderer != null) renderer.material.color = new Color(0.5f, 0.7f, 1f);
+            var projectile = go.AddComponent<ProjectileAvatar>();
+            projectile.Launch(origin, direction, spell.projectileSpeed, spell.maxRange,
+                new DamagePacket(spell.damage, spell.poiseDamage, transform.position));
+        }
+
+        private void OnSkillWindowOpen()
+        {
+            var skill = Brain.CurrentSkill;
+            var packet = new DamagePacket(skill.damage, skill.poiseDamage, transform.position);
+
+            if (skill.radius > 0f)
+            {
+                // ضربة دائرية حول اللاعب (نفس مسار ضربة البوس الأرضية)
+                var targets = LockOnSystem.Targets;
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    if (!targets[i].IsAlive)
+                        continue;
+                    if (Vector3.Distance(transform.position, targets[i].Position) > skill.radius)
+                        continue;
+                    var component = targets[i] as Component;
+                    var damageable = component != null ? component.GetComponent<Damageable>() : null;
+                    if (damageable != null && damageable != Damageable)
+                        damageable.ApplyDamage(packet);
+                }
+                return;
+            }
+
+            if (weaponHitbox != null)
+                weaponHitbox.Activate(packet);
+        }
+
         public void EquipCurrentWeapon()
         {
             var w = Weapons.Current;
@@ -134,11 +195,17 @@ namespace SoulsGame.Player
             Brain.HitboxOpen += type =>
             {
                 if (weaponHitbox == null) return;
-                float damage = type == AttackType.Heavy ? weapon.heavyDamage : weapon.lightDamage;
-                float poise = type == AttackType.Heavy ? weapon.heavyPoiseDamage : weapon.lightPoiseDamage;
-                damage += Progression.BonusDamage; // إحصائية القوة
-                weaponHitbox.Activate(new DamagePacket(damage, poise, transform.position));
+                var w = Brain.CurrentWeapon;
+                float poise = type == AttackType.Heavy ? w.heavyPoiseDamage : w.lightPoiseDamage;
+                weaponHitbox.Activate(new DamagePacket(CurrentAttackDamage(type), poise, transform.position));
             };
+            Brain.SpellReleased += OnSpellReleased;
+            Brain.SkillWindowOpen += OnSkillWindowOpen;
+            Brain.SkillWindowClose += () =>
+            {
+                if (weaponHitbox != null) weaponHitbox.Deactivate();
+            };
+            Brain.SkillMotion += distance => motor.BeginSkillDash(distance);
             Brain.HitboxClose += () =>
             {
                 if (weaponHitbox != null) weaponHitbox.Deactivate();

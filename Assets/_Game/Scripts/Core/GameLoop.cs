@@ -76,6 +76,7 @@ namespace SoulsGame.Core
         {
             if (levelUpMenu != null && levelUpMenu.IsOpen)
                 levelUpMenu.Close();
+            player.Buff.Clear(); // التعزيز يسقط بالموت
             Ledger.Drop(player.transform.position, player.Wallet.TakeAll());
             RefreshStainMarker();
             deathScreen.Show();

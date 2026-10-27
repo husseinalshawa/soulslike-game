@@ -33,12 +33,22 @@ namespace SoulsGame.Player
         private CharacterController controller;
         private Vector3 dodgeDirection;
         private float verticalVelocity;
+        private float skillDashRemaining;
+        private float skillDashSpeed;
 
         public Vector3 LastPlanarDirection { get; private set; } = Vector3.forward;
 
         private void Awake()
         {
             controller = GetComponent<CharacterController>();
+        }
+
+        // اندفاع مهارة السلاح (اندفاعة قاطعة/شحنة خارقة): للأمام خلال ربع ثانية.
+        public void BeginSkillDash(float distance)
+        {
+            const float dashDuration = 0.25f;
+            skillDashRemaining = dashDuration;
+            skillDashSpeed = distance / dashDuration;
         }
 
         public void BeginDodge()
@@ -80,7 +90,14 @@ namespace SoulsGame.Player
                     planar = dodgeDirection * (DodgeDistance * DodgeDistanceMultiplier
                         / (PlayerBrain.DodgeDuration * DodgeDurationMultiplier));
                     break;
-                // Attack/Stagger/Death: لا حركة أفقية — الالتزام بالحركة
+                // Attack/Cast/Stagger/Death: لا حركة أفقية — الالتزام بالحركة
+                case PlayerStateId.Skill:
+                    if (skillDashRemaining > 0f)
+                    {
+                        skillDashRemaining -= dt;
+                        planar = transform.forward * skillDashSpeed;
+                    }
+                    break;
             }
 
             verticalVelocity = controller.isGrounded ? -1f : verticalVelocity + Gravity * dt;

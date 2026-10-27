@@ -144,6 +144,30 @@ namespace SoulsGame.Tests
         }
 
         [Test]
+        public void Armor_ReducesDamage_AndBuffRaisesAttack()
+        {
+            var go = new GameObject("Bootstrap");
+            var bootstrap = go.AddComponent<GameBootstrap>();
+            var player = bootstrap.Player;
+
+            // درع الصفائح: تخفيض 30%
+            var platePickup = bootstrap.Pickups[1];
+            platePickup.TryCollect(platePickup.transform.position);
+            Assert.AreEqual("Warden Plate", player.Armors.Current.armorName);
+
+            float before = player.Damageable.Health.Current;
+            player.Damageable.ApplyDamage(new Combat.DamagePacket(20f, 0f, Vector3.zero));
+            Assert.AreEqual(before - 14f, player.Damageable.Health.Current, 0.01f,
+                "ضربة 20 تخصم 14 مع تخفيض 30%");
+
+            // تعزيز السلاح: +10 على ضرر الضربة
+            float baseDamage = player.CurrentAttackDamage(Combat.AttackType.Light);
+            player.Buff.Activate(10f, 30f);
+            Assert.AreEqual(baseDamage + 10f, player.CurrentAttackDamage(Combat.AttackType.Light),
+                "التعزيز يرفع ضرر الحزمة");
+        }
+
+        [Test]
         public void Horse_SummonRideAndForcedDismount()
         {
             var go = new GameObject("Bootstrap");

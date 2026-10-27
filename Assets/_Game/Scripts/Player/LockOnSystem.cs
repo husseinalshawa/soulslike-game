@@ -24,6 +24,9 @@ namespace SoulsGame.Player
 
         public static void Unregister(ITargetable target) => registry.Remove(target);
 
+        // كل الأهداف المسجلة — تستهلكها القذائف والضربات الدائرية
+        public static IReadOnlyList<ITargetable> Targets => registry;
+
         public PlayerMotor motor;
         public Transform cameraTransform;
 
