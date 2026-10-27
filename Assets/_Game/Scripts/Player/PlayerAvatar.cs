@@ -21,6 +21,7 @@ namespace SoulsGame.Player
         public ThirdPersonCamera cameraRig;
         public HorseAvatar horse;
         public List<ForbiddenZone> mountForbiddenZones = new List<ForbiddenZone>();
+        public MarshZone marsh; // الماء الضحل حول الكنيسة — يسنده البناء
 
         // توقيف إدخال القتال والحركة أثناء القوائم (قائمة رفع المستوى)
         public bool InputLocked { get; set; }
@@ -405,6 +406,9 @@ namespace SoulsGame.Player
                 motor.MoveInput = move;
                 motor.SprintActive = isSprinting;
                 motor.State = Brain.CurrentState;
+                motor.TerrainSpeedMultiplier =
+                    marsh != null && marsh.Contains(transform.position)
+                        ? MarshZone.SpeedMultiplier : 1f;
             }
 
             Vector2 mouseLook = InputLocked ? Vector2.zero : Controls.LookMouse.ReadValue<Vector2>();
