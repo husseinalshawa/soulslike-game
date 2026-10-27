@@ -37,6 +37,19 @@ namespace SoulsGame.Tests
         }
 
         [Test]
+        public void Poise_ThresholdMultiplier_RaisesBreakPoint()
+        {
+            var poise = new PoiseMeter(max: 40f, regenPerSecond: 0f);
+            poise.SetThresholdMultiplier(1.5f); // العتبة الفعلية 60
+
+            Assert.IsFalse(poise.TakePoiseDamage(45f), "45 < 60 لا تكسر مع المضاعف");
+            Assert.IsTrue(poise.TakePoiseDamage(20f), "التراكم 65 ≥ 60 يكسر");
+
+            poise.SetThresholdMultiplier(1f); // عودة للسلوك الأصلي
+            Assert.IsTrue(poise.TakePoiseDamage(45f), "45 ≥ 40 تكسر بدون مضاعف");
+        }
+
+        [Test]
         public void Poise_RegensOverTime()
         {
             var poise = new PoiseMeter(max: 40f, regenPerSecond: 10f);
