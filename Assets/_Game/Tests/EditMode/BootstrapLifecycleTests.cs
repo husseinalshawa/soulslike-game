@@ -57,5 +57,24 @@ namespace SoulsGame.Tests
             Assert.AreEqual(112f, player.Damageable.Health.Max, "صلابة +1 ترفع الحد الأقصى إلى 112");
             Assert.AreEqual(112f, player.Damageable.Health.Current, "ممتلئ بعد الرفع (يحدث عند الراحة)");
         }
+
+        [Test]
+        public void Boss_WiredIntoScene_VictoryPaysSouls()
+        {
+            var go = new GameObject("Bootstrap");
+            var bootstrap = go.AddComponent<GameBootstrap>();
+
+            Assert.IsNotNull(bootstrap.Boss, "البوس بُني");
+            Assert.AreEqual(Enemies.BossStateId.Dormant, bootstrap.Boss.Brain.CurrentState, "خامل قبل عبور الضباب");
+            Assert.AreEqual(1000f, bootstrap.Boss.Damageable.Health.Max, "صحة البوس 1000");
+
+            bootstrap.Boss.BeginFight();
+            Assert.AreEqual(Enemies.BossStateId.Approach, bootstrap.Boss.Brain.CurrentState);
+
+            bootstrap.Boss.Damageable.Health.TakeDamage(2000f);
+
+            Assert.AreEqual(2000, bootstrap.Player.Wallet.Current, "النصر يمنح 2000 روح");
+            Assert.IsTrue(bootstrap.Boss.DefeatedForever, "البوس لا يعود أبداً");
+        }
     }
 }

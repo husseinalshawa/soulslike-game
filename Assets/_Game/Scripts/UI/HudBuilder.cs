@@ -92,6 +92,79 @@ namespace SoulsGame.UI
             return menu;
         }
 
+        // لافتة النصر الكبيرة (GREAT ENEMY FELLED) — Toast بخط ضخم ذهبي.
+        public static Toast BuildBanner()
+        {
+            var canvas = GameObject.Find("HUD");
+            if (canvas == null) return null;
+
+            var textGo = new GameObject("Banner");
+            textGo.transform.SetParent(canvas.transform, false);
+            var text = textGo.AddComponent<Text>();
+            text.fontSize = 44;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.color = new Color(0.85f, 0.7f, 0.25f);
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var rect = textGo.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(0f, 40f);
+            rect.sizeDelta = new Vector2(900f, 70f);
+            textGo.SetActive(false);
+
+            var holderGo = new GameObject("BannerController");
+            holderGo.transform.SetParent(canvas.transform, false);
+            var toast = holderGo.AddComponent<Toast>();
+            toast.label = text;
+            return toast;
+        }
+
+        public static BossBar BuildBossBar(SoulsGame.Enemies.BossAvatar boss)
+        {
+            var canvas = GameObject.Find("HUD");
+            if (canvas == null) return null;
+
+            var background = CreateImage(canvas.transform, "BossBar", new Color(0f, 0f, 0f, 0.7f));
+            var rect = background.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, 60f);
+            rect.sizeDelta = new Vector2(700f, 18f);
+
+            var fill = CreateImage(background.transform, "Fill", new Color(0.65f, 0.55f, 0.2f));
+            var fillRect = fill.rectTransform;
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = new Vector2(1f, 1f);
+            fillRect.pivot = new Vector2(0f, 0.5f);
+            fillRect.sizeDelta = Vector2.zero;
+
+            var name = new GameObject("Name");
+            name.transform.SetParent(background.transform, false);
+            var nameText = name.AddComponent<Text>();
+            nameText.text = "ARENA WARDEN";
+            nameText.fontSize = 16;
+            nameText.alignment = TextAnchor.LowerCenter;
+            nameText.color = new Color(0.85f, 0.8f, 0.65f);
+            nameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var nameRect = name.GetComponent<RectTransform>();
+            nameRect.anchorMin = new Vector2(0.5f, 1f);
+            nameRect.anchorMax = new Vector2(0.5f, 1f);
+            nameRect.pivot = new Vector2(0.5f, 0f);
+            nameRect.anchoredPosition = new Vector2(0f, 4f);
+            nameRect.sizeDelta = new Vector2(400f, 22f);
+
+            var controllerGo = new GameObject("BossBarController");
+            controllerGo.transform.SetParent(canvas.transform, false);
+            var bar = controllerGo.AddComponent<BossBar>();
+            bar.boss = boss;
+            bar.root = background.gameObject;
+            bar.fill = fillRect;
+            bar.nameLabel = nameText;
+            background.gameObject.SetActive(false);
+            return bar;
+        }
+
         private static Text MakeLabel(Transform parent, Vector2 position, int fontSize)
         {
             var go = new GameObject("Label");

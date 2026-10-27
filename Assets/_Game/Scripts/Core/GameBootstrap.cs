@@ -22,6 +22,8 @@ namespace SoulsGame.Core
 
         public PlayerAvatar Player { get; private set; }
         public EnemyAvatar Enemy { get; private set; }
+        public EnemyAvatar Enemy2 { get; private set; }
+        public BossAvatar Boss { get; private set; }
         public GameLoop Loop { get; private set; }
 
         private void Awake()
@@ -44,12 +46,25 @@ namespace SoulsGame.Core
                 enemyWeapon.light = new AttackTimeline(0.6f, 0.3f, 1.2f, 1.2f);
             }
 
+            if (bossStats == null)
+            {
+                bossStats = ScriptableObject.CreateInstance<CharacterStats>();
+                bossStats.maxHealth = 1000f;
+                bossStats.maxPoise = 120f;
+                bossStats.runSpeed = 3.5f;
+                bossStats.soulsReward = 2000;
+            }
+
             BuildArena();
             Player = BuildPlayer(new Vector3(0f, 1.1f, -12f));
             BuildCamera(Player);
             Enemy = BuildEnemy(new Vector3(0f, 1.1f, 5f),
                 new Vector3(-5f, 1.1f, 5f), new Vector3(5f, 1.1f, 5f));
+            // جندي ثانٍ في طريق غرفة البوس — ليكون لإعادة الإحياء عند الراحة معنى
+            Enemy2 = BuildEnemy(new Vector3(3f, 1.1f, 12f),
+                new Vector3(0f, 1.1f, 12f), new Vector3(6f, 1.1f, 12f));
             BuildHudAndGameLoop();
+            BuildBossArea();
         }
 
         private void BuildHudAndGameLoop()
@@ -58,7 +73,7 @@ namespace SoulsGame.Core
             UI.HudBuilder.BuildEnemyBar(Enemy, Player.lockOn);
 
             Loop = gameObject.AddComponent<GameLoop>();
-            Loop.Initialize(Player, new[] { Enemy }, deathScreen);
+            Loop.Initialize(Player, new[] { Enemy, Enemy2 }, deathScreen);
             Loop.toast = UI.HudBuilder.BuildToast(Player);
             Loop.levelUpMenu = UI.HudBuilder.BuildLevelUpMenu(Player);
 
@@ -76,6 +91,94 @@ namespace SoulsGame.Core
                 BuildGraceMarker(0, Player.transform.position, lit: true),
                 BuildGraceMarker(1, bossGatePosition, lit: false)
             };
+        }
+
+        private void BuildBossArea()
+        {
+            // غرفة البوس 22×22 شمال الساحة خلف الفتحة
+            CreateBox("BossFloor", new Vector3(0f, -0.5f, 31f), new Vector3(22f, 1f, 22f), new Color(0.22f, 0.2f, 0.26f));
+            CreateBox("BossWall_N", new Vector3(0f, 2f, 41.5f), new Vector3(24f, 4f, 1f), new Color(0.18f, 0.18f, 0.2f));
+            CreateBox("BossWall_W", new Vector3(-10.5f, 2f, 31f), new Vector3(1f, 4f, 22f), new Color(0.18f, 0.18f, 0.2f));
+            CreateBox("BossWall_E", new Vector3(10.5f, 2f, 31f), new Vector3(1f, 4f, 22f), new Color(0.18f, 0.18f, 0.2f));
+            // سد جانبي الممر بين الساحة والغرفة
+            CreateBox("Corridor_W", new Vector3(1.5f, 2f, 20.9f), new Vector3(1f, 4f, 1.8f), new Color(0.18f, 0.18f, 0.2f));
+            CreateBox("Corridor_E", new Vector3(6.5f, 2f, 20.9f), new Vector3(1f, 4f, 1.8f), new Color(0.18f, 0.18f, 0.2f));
+
+            Boss = BuildBoss(new Vector3(0f, 1.8f, 33f));
+
+            // جدار الضباب في الفتحة (x 2..6 عند z=20.5)
+            var gateGo = CreateBox("FogGate", new Vector3(4f, 2f, 20.5f), new Vector3(4f, 4f, 0.3f), new Color(0.55f, 0.45f, 0.7f));
+            var gateCollider = gateGo.GetComponent<Collider>();
+            gateCollider.isTrigger = true;
+            var barrier = CreateBox("FogBarrier", new Vector3(4f, 2f, 20.5f), new Vector3(4f, 4f, 0.4f), new Color(0.35f, 0.25f, 0.5f));
+            barrier.SetActive(false);
+            var gate = gateGo.AddComponent<FogGate>();
+            gate.barrier = barrier;
+            gate.OnPlayerEntered = () => Boss.BeginFight();
+
+            Loop.boss = Boss;
+            Loop.fogGate = gate;
+
+            var banner = UI.HudBuilder.BuildBanner();
+            UI.HudBuilder.BuildBossBar(Boss);
+            Boss.Defeated += () =>
+            {
+                Player.Wallet.Add(bossStats.soulsReward);
+                gate.Seal(false);
+                if (banner != null)
+                    banner.Show("GREAT ENEMY FELLED");
+            };
+        }
+
+        private BossAvatar BuildBoss(Vector3 position)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            go.name = "ArenaWarden";
+            go.transform.position = position;
+            go.transform.localScale = new Vector3(1.8f, 1.8f, 1.8f);
+            Tint(go, new Color(0.4f, 0.15f, 0.3f));
+
+            go.SetActive(false); // نمط «اربط ثم فعّل»
+
+            Destroy(go.GetComponent<CapsuleCollider>());
+            var controller = go.AddComponent<CharacterController>();
+            controller.height = 2f;
+            controller.radius = 0.45f;
+            controller.center = Vector3.zero;
+
+            var damageable = go.AddComponent<Damageable>();
+            damageable.stats = bossStats;
+
+            var hurtboxGo = new GameObject("Hurtbox");
+            hurtboxGo.transform.SetParent(go.transform, false);
+            var hurtCollider = hurtboxGo.AddComponent<CapsuleCollider>();
+            hurtCollider.isTrigger = true;
+            hurtCollider.height = 2f;
+            hurtCollider.radius = 0.5f;
+            var hurtbox = hurtboxGo.AddComponent<Hurtbox>();
+            hurtbox.owner = damageable;
+
+            var weaponGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            weaponGo.name = "GreatClub";
+            weaponGo.transform.SetParent(go.transform, false);
+            weaponGo.transform.localPosition = new Vector3(0f, 0.2f, 1.1f);
+            weaponGo.transform.localScale = new Vector3(0.35f, 0.35f, 1.4f);
+            Tint(weaponGo, new Color(0.3f, 0.22f, 0.2f));
+            var weaponCollider = weaponGo.GetComponent<Collider>();
+            weaponCollider.isTrigger = true;
+            var weaponBody = weaponGo.AddComponent<Rigidbody>();
+            weaponBody.isKinematic = true;
+            var hitbox = weaponGo.AddComponent<Hitbox>();
+            hitbox.ignoreOwner = damageable;
+
+            var boss = go.AddComponent<BossAvatar>();
+            boss.stats = bossStats;
+            boss.weaponHitbox = hitbox;
+            boss.player = Player.transform;
+            boss.playerDamageable = Player.Damageable;
+
+            go.SetActive(true);
+            return boss;
         }
 
         private GraceSiteMarker BuildGraceMarker(int siteId, Vector3 position, bool lit)
@@ -176,7 +279,9 @@ namespace SoulsGame.Core
         {
             CreateBox("Ground", new Vector3(0f, -0.5f, 0f), new Vector3(40f, 1f, 40f), new Color(0.25f, 0.25f, 0.28f));
 
-            CreateBox("Wall_N", new Vector3(0f, 2f, 20.5f), new Vector3(42f, 4f, 1f), new Color(0.2f, 0.2f, 0.22f));
+            // الجدار الشمالي بفتحة (x من 2 إلى 6) تقود لغرفة البوس
+            CreateBox("Wall_N_Left", new Vector3(-9.5f, 2f, 20.5f), new Vector3(23f, 4f, 1f), new Color(0.2f, 0.2f, 0.22f));
+            CreateBox("Wall_N_Right", new Vector3(13.5f, 2f, 20.5f), new Vector3(15f, 4f, 1f), new Color(0.2f, 0.2f, 0.22f));
             CreateBox("Wall_S", new Vector3(0f, 2f, -20.5f), new Vector3(42f, 4f, 1f), new Color(0.2f, 0.2f, 0.22f));
             CreateBox("Wall_E", new Vector3(20.5f, 2f, 0f), new Vector3(1f, 4f, 42f), new Color(0.2f, 0.2f, 0.22f));
             CreateBox("Wall_W", new Vector3(-20.5f, 2f, 0f), new Vector3(1f, 4f, 42f), new Color(0.2f, 0.2f, 0.22f));

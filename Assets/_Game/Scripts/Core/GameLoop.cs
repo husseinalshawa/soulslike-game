@@ -18,6 +18,8 @@ namespace SoulsGame.Core
         public Toast toast;
         public LevelUpMenu levelUpMenu;
         public GraceSiteMarker[] graceMarkers;
+        public BossAvatar boss;
+        public FogGate fogGate;
 
         public BloodstainLedger Ledger { get; } = new BloodstainLedger();
         public GraceSystem Graces { get; } = new GraceSystem();
@@ -125,6 +127,13 @@ namespace SoulsGame.Core
                 foreach (var enemy in enemies)
                     if (enemy != null)
                         enemy.ResetToSpawn();
+
+            // موت أثناء معركة البوس: البوس يعود كاملاً والبوابة تفتح من جديد
+            if (boss != null && !boss.DefeatedForever && boss.FightActive)
+            {
+                boss.ResetFight();
+                fogGate?.Reopen();
+            }
         }
     }
 }
