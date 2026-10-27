@@ -203,5 +203,69 @@ namespace SoulsGame.World
 
         private static void Box(string name, Vector3 position, Vector3 scale, Color color) =>
             GameBootstrap.CreateBox(name, position, scale, color);
+
+        public struct ChapelBuildResult
+        {
+            public Vector3 AltarPosition;
+            public GameObject WaterPlane;
+        }
+
+        // الكنيسة الغارقة: أرضية حجرية، جدران متهدمة بفتحات، صفا أعمدة،
+        // مذبح في الصدر الشمالي، وسطح ماء يغمر حوض المستنقع.
+        public static ChapelBuildResult BuildChapel(Transform parent, WorldTheme theme)
+        {
+            Vector3 c = WorldHeightmap.MarshCenter; // (120, 0, 80)
+            float floorY = WorldHeightmap.MarshFloorY;
+            Color stone = theme.ruinColor;
+
+            ChapelBox(parent, "ChapelFloor",
+                new Vector3(c.x, floorY + 0.15f, c.z + 4f), new Vector3(18f, 0.3f, 28f), stone);
+
+            // الجدار الشمالي (خلف المذبح) شبه سليم؛ الشرقي والغربي متهدمان بفتحات؛
+            // الجنوب مفتوح كله — هو المدخل.
+            ChapelBox(parent, "ChapelWall_N",
+                new Vector3(c.x, floorY + 2.5f, c.z + 18f), new Vector3(18f, 5f, 1f), stone);
+            ChapelBox(parent, "ChapelWall_W1",
+                new Vector3(c.x - 9f, floorY + 2f, c.z - 4f), new Vector3(1f, 4f, 10f), stone);
+            ChapelBox(parent, "ChapelWall_W2",
+                new Vector3(c.x - 9f, floorY + 1.2f, c.z + 12f), new Vector3(1f, 2.4f, 8f), stone);
+            ChapelBox(parent, "ChapelWall_E1",
+                new Vector3(c.x + 9f, floorY + 1.5f, c.z - 2f), new Vector3(1f, 3f, 8f), stone);
+            ChapelBox(parent, "ChapelWall_E2",
+                new Vector3(c.x + 9f, floorY + 2.2f, c.z + 13f), new Vector3(1f, 4.4f, 6f), stone);
+
+            // صفا أعمدة نحو المذبح
+            for (int i = 0; i < 3; i++)
+            {
+                float z = c.z - 6f + i * 7f;
+                ChapelBox(parent, $"ChapelColumn_W{i}",
+                    new Vector3(c.x - 4f, floorY + 1.9f, z), new Vector3(0.8f, 3.8f, 0.8f), stone);
+                ChapelBox(parent, $"ChapelColumn_E{i}",
+                    new Vector3(c.x + 4f, floorY + 1.9f, z), new Vector3(0.8f, 3.8f, 0.8f), stone);
+            }
+
+            // المذبح — قلب الخاتمة (الصدر الشمالي: c.z + 10 = 90)
+            Vector3 altarPosition = new Vector3(c.x, floorY + 0.9f, c.z + 10f);
+            ChapelBox(parent, "ChapelAltar", altarPosition, new Vector3(2.4f, 1.2f, 1.2f),
+                new Color(stone.r + 0.08f, stone.g + 0.06f, stone.b + 0.04f));
+
+            // سطح الماء: مستوى رقيق يغمر الحوض كله (بصري — بلا تصادم)
+            var water = GameBootstrap.CreateBox("MarshWater",
+                new Vector3(c.x, WorldHeightmap.MarshWaterY, c.z),
+                new Vector3(WorldHeightmap.MarshRadius * 2f, 0.04f, WorldHeightmap.MarshRadius * 2f),
+                new Color(0.25f, 0.4f, 0.42f));
+            var waterCollider = water.GetComponent<Collider>();
+            if (waterCollider != null) waterCollider.enabled = false;
+            water.transform.SetParent(parent, true);
+
+            return new ChapelBuildResult { AltarPosition = altarPosition, WaterPlane = water };
+        }
+
+        private static void ChapelBox(Transform parent, string name,
+            Vector3 position, Vector3 scale, Color color)
+        {
+            var go = GameBootstrap.CreateBox(name, position, scale, color);
+            go.transform.SetParent(parent, true);
+        }
     }
 }
