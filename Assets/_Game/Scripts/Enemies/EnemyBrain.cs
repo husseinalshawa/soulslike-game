@@ -11,6 +11,7 @@ namespace SoulsGame.Enemies
         AttackActive,
         AttackRecovery,
         Stagger,
+        Returning, // تجاوز الـ leash: يعود لمعسكره متجاهلاً اللاعب
         Dead
     }
 
@@ -24,6 +25,10 @@ namespace SoulsGame.Enemies
         private readonly float fovDegrees;
         private readonly float attackRange;
         private readonly float staggerDuration;
+
+        // أبعد مسافة مطاردة عن نقطة المعسكر قبل التراجع
+        public const float LeashRange = 25f;
+        private const float HomeArrivalRadius = 2f;
 
         private float stateTime;
 
@@ -43,7 +48,8 @@ namespace SoulsGame.Enemies
             this.staggerDuration = staggerDuration;
         }
 
-        public void Tick(float deltaTime, float distanceToPlayer, float angleToPlayerDegrees)
+        public void Tick(float deltaTime, float distanceToPlayer, float angleToPlayerDegrees,
+            float distanceFromHome = 0f)
         {
             stateTime += deltaTime;
 
@@ -55,8 +61,19 @@ namespace SoulsGame.Enemies
                     break;
 
                 case EnemyStateId.Chase:
+                    if (distanceFromHome > LeashRange)
+                    {
+                        Enter(EnemyStateId.Returning);
+                        break;
+                    }
                     if (distanceToPlayer <= attackRange)
                         Enter(EnemyStateId.AttackWindup);
+                    break;
+
+                case EnemyStateId.Returning:
+                    // hysteresis: يتجاهل اللاعب تماماً حتى يصل بيته
+                    if (distanceFromHome <= HomeArrivalRadius)
+                        Enter(EnemyStateId.Patrol);
                     break;
 
                 case EnemyStateId.AttackWindup:

@@ -96,7 +96,9 @@ namespace SoulsGame.Enemies
             if (AggroSuppressed && Brain.CurrentState == EnemyStateId.Patrol)
                 distance = float.MaxValue; // لا اكتشاف أثناء القائمة
 
-            Brain.Tick(dt, distance, angle);
+            Vector3 fromHome = spawnPosition - transform.position;
+            fromHome.y = 0f;
+            Brain.Tick(dt, distance, angle, fromHome.magnitude);
 
             switch (Brain.CurrentState)
             {
@@ -105,6 +107,9 @@ namespace SoulsGame.Enemies
                     break;
                 case EnemyStateId.Chase:
                     MoveTowards(player.position, ChaseSpeed, dt);
+                    break;
+                case EnemyStateId.Returning:
+                    MoveTowards(spawnPosition, PatrolSpeed, dt);
                     break;
                 case EnemyStateId.AttackWindup:
                     // الإعلان المسبق: يواصل تعقب اللاعب بالدوران فقط (مقروء وعادل)

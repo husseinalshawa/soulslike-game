@@ -90,6 +90,32 @@ namespace SoulsGame.Tests
         }
 
         [Test]
+        public void Chase_BeyondLeash_Returns()
+        {
+            brain.Tick(0.05f, 8f, 0f); // → Chase
+
+            brain.Tick(0.05f, 5f, 0f, distanceFromHome: 26f); // تجاوز 25م من المعسكر
+
+            Assert.AreEqual(EnemyStateId.Returning, brain.CurrentState);
+        }
+
+        [Test]
+        public void Returning_IgnoresPlayer_UntilHome()
+        {
+            brain.Tick(0.05f, 8f, 0f);
+            brain.Tick(0.05f, 5f, 0f, distanceFromHome: 26f); // → Returning
+
+            brain.Tick(0.05f, 1f, 0f, distanceFromHome: 20f); // اللاعب لاصق — يتجاهله
+            Assert.AreEqual(EnemyStateId.Returning, brain.CurrentState, "لا re-aggro أثناء العودة");
+
+            brain.Tick(0.05f, 30f, 0f, distanceFromHome: 1f); // وصل بيته
+            Assert.AreEqual(EnemyStateId.Patrol, brain.CurrentState);
+
+            brain.Tick(0.05f, 8f, 0f, distanceFromHome: 1f); // اكتشاف جديد مشروع
+            Assert.AreEqual(EnemyStateId.Chase, brain.CurrentState);
+        }
+
+        [Test]
         public void Dead_IsTerminal()
         {
             brain.NotifyDied();
