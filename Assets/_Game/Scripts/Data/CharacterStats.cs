@@ -21,5 +21,8 @@ namespace SoulsGame.Data
         public float sprintSpeed = 8f;
         public float sprintStaminaPerSecond = 10f;
         public float dodgeStaminaCost = 20f;
+
+        // أرواح تُمنح لقاتل هذه الشخصية (صفر للاعب)
+        public int soulsReward = 0;
     }
 }
