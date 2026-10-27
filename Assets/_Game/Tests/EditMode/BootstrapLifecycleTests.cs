@@ -111,6 +111,36 @@ namespace SoulsGame.Tests
         }
 
         [Test]
+        public void Horse_SummonRideAndForcedDismount()
+        {
+            var go = new GameObject("Bootstrap");
+            var bootstrap = go.AddComponent<GameBootstrap>();
+            var player = bootstrap.Player;
+
+            Assert.IsNotNull(bootstrap.Horse, "الحصان بُني");
+            Assert.IsNotNull(player.Mount, "نظام الركوب تهيأ");
+
+            // عند بوابة الحصن (داخل المنطقة المحظورة): الاستدعاء مرفوض
+            Assert.IsFalse(player.TrySummonHorse(), "ممنوع داخل الحصن");
+
+            // في المرج: استدعاء وركوب فوري
+            player.transform.position = new Vector3(50f, 5f, -80f);
+            Assert.IsTrue(player.TrySummonHorse());
+            Assert.IsTrue(player.IsRiding);
+
+            // ضربة أثناء الركوب = ترجّل إجباري + الضرر كاملاً
+            float hpBefore = player.Damageable.Health.Current;
+            player.Damageable.ApplyDamage(new Combat.DamagePacket(20f, 20f, Vector3.zero));
+            Assert.IsFalse(player.IsRiding, "الضربة تنزله من السرج");
+            Assert.AreEqual(hpBefore - 20f, player.Damageable.Health.Current, 0.01f);
+
+            // نفس الزر يركب ثم ينزل (toggle)
+            Assert.IsTrue(player.TrySummonHorse());
+            Assert.IsTrue(player.TrySummonHorse(), "الزر راكباً = ترجّل");
+            Assert.IsFalse(player.IsRiding);
+        }
+
+        [Test]
         public void Interact_TogglesMenu_AndIsDeadSafe()
         {
             var go = new GameObject("Bootstrap");

@@ -20,8 +20,11 @@ namespace SoulsGame.Player
         public bool SprintActive { get; set; }
         public PlayerStateId State { get; set; } = PlayerStateId.Locomotion;
 
-        // هدف القفل: عند وجوده يتحول اللاعب لوضع strafe (يواجه الهدف) — المهمة 8
+        // هدف القفل: عند وجوده يتحول اللاعب لوضع strafe (يواجه الهدف)
         public Transform StrafeTarget { get; set; }
+
+        // أثناء الركوب: الحصان هو من يتحرك — المحرك متجمد تماماً
+        public bool Frozen { get; set; }
 
         private CharacterController controller;
         private Vector3 dodgeDirection;
@@ -43,6 +46,9 @@ namespace SoulsGame.Player
 
         private void Update()
         {
+            if (Frozen)
+                return;
+
             float dt = Time.deltaTime;
             Vector3 planar = Vector3.zero;
 

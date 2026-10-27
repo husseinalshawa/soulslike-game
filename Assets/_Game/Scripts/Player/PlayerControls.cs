@@ -16,6 +16,7 @@ namespace SoulsGame.Player
         public readonly InputAction Block;
         public readonly InputAction LockOn;
         public readonly InputAction Interact;
+        public readonly InputAction Mount;
 
         private readonly InputActionMap map;
 
@@ -66,6 +67,10 @@ namespace SoulsGame.Player
             Interact = map.AddAction("Interact", InputActionType.Button);
             Interact.AddBinding("<Keyboard>/e");
             Interact.AddBinding("<Gamepad>/buttonSouth");
+
+            Mount = map.AddAction("Mount", InputActionType.Button);
+            Mount.AddBinding("<Keyboard>/r");
+            Mount.AddBinding("<Gamepad>/select");
         }
 
         public void Enable() => map.Enable();

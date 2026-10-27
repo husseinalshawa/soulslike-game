@@ -33,6 +33,7 @@ namespace SoulsGame.Core
         public EnemyAvatar Enemy2 { get; private set; }
         public EnemyAvatar[] AllEnemies { get; private set; }
         public BossAvatar Boss { get; private set; }
+        public HorseAvatar Horse { get; private set; }
         public SoulsCache Cache { get; private set; }
         public GameLoop Loop { get; private set; }
 
@@ -102,6 +103,38 @@ namespace SoulsGame.Core
             BuildHudAndGameLoop();
             BuildBossArea(fy);
             BuildSoulsCache();
+            BuildHorse();
+        }
+
+        private void BuildHorse()
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            go.name = "Steed";
+            go.transform.position = WorldBuilder.OnGround(5f, -30f, 0.9f);
+            go.transform.localScale = new Vector3(0.9f, 0.9f, 1.8f); // ممدود كجسد حصان
+            Tint(go, new Color(0.45f, 0.32f, 0.22f));
+
+            go.SetActive(false);
+            Destroy(go.GetComponent<CapsuleCollider>());
+            var controller = go.AddComponent<CharacterController>();
+            controller.height = 1.8f;
+            controller.radius = 0.5f;
+            controller.center = Vector3.zero;
+
+            Horse = go.AddComponent<HorseAvatar>();
+            Horse.cameraTransform = Camera.main != null ? Camera.main.transform
+                : Player.cameraRig != null ? Player.cameraRig.transform : null;
+
+            Player.horse = Horse;
+            Player.mountForbiddenZones.Add(new ForbiddenZone { Center = Vector3.zero, Radius = 38f }); // الحصن
+            Player.mountForbiddenZones.Add(new ForbiddenZone
+            {
+                Center = new Vector3((WorldHeightmap.CaveMouthCenter.x + WorldBuilder.CaveRoomCenter.x) * 0.5f,
+                    0f, WorldHeightmap.CaveMouthCenter.z),
+                Radius = 20f // النفق والغرفة
+            });
+
+            go.SetActive(true); // يجري Awake (الذي يخفيه فوراً حتى الاستدعاء)
         }
 
         private EnemyAvatar[] BuildCamp(Vector3 center)

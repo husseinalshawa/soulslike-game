@@ -32,6 +32,8 @@ namespace SoulsGame.Player
 
         private float switchCooldown;
 
+        public void Release() => CurrentTarget = null;
+
         public void Toggle()
         {
             if (IsLocked)
