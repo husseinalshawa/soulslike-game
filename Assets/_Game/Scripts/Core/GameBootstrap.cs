@@ -190,6 +190,8 @@ namespace SoulsGame.Core
             Loop.fadeOverlay = UI.HudBuilder.BuildFadeOverlay();
             Player.Damageable.Damaged += _ => HitStop.Request(0.05f);
             Player.Brain.GuardBroken += () => rig?.Shake.Shake(0.25f, 0.3f);
+            // إشعار تبديل العتاد (Tab/G/V) باسم القطعة
+            Player.GearChanged += message => Loop.toast?.Show(message);
         }
 
         // الكنيسة الغارقة والقصة: البناء، موقع الراحة الرابع، الماء الضحل،

@@ -10,7 +10,7 @@ namespace SoulsGame.Player
     // الغلاف (PlayerAvatar) يوصل الإدخال والأحداث بالمشهد والأنيميشن.
     public class PlayerBrain
     {
-        private enum BufferedAction { None, Dodge, LightAttack, HeavyAttack }
+        private enum BufferedAction { None, Dodge, LightAttack, HeavyAttack, Cast, Skill }
 
         public const float DodgeDuration = 0.6f;
         public const float DodgeIFrameStart = 0.1f;
@@ -28,6 +28,7 @@ namespace SoulsGame.Player
         private float dodgeDurationMultiplier = 1f;
 
         private SpellData castSpell;
+        private SpellData pendingCastSpell; // المطلوبة وقت الضغط — تُستهلك عند التنفيذ
         private bool spellReleased;
         private int skillWindowIndex;
         private bool skillWindowOpen;
@@ -85,38 +86,16 @@ namespace SoulsGame.Player
         public void SetDodgeProfile(float durationMultiplier) =>
             dodgeDurationMultiplier = Mathf.Max(0.5f, durationMultiplier);
 
+        // الضغط أثناء التزام يُخزَّن (كالهجمات)، وخصم الـFP لحظة التنفيذ الفعلي.
         public bool RequestCast(SpellData spell)
         {
-            if (spell == null || CurrentState == PlayerStateId.Death)
+            if (spell == null)
                 return false;
-            if (CurrentState != PlayerStateId.Locomotion && CurrentState != PlayerStateId.Block)
-                return false;
-            if (focus == null || !focus.TrySpend(spell.fpCost))
-            {
-                FocusRejected?.Invoke();
-                return false;
-            }
-            castSpell = spell;
-            Enter(PlayerStateId.Cast);
-            return true;
+            pendingCastSpell = spell;
+            return Request(BufferedAction.Cast);
         }
 
-        public bool RequestSkill()
-        {
-            if (CurrentState == PlayerStateId.Death)
-                return false;
-            if (CurrentState != PlayerStateId.Locomotion && CurrentState != PlayerStateId.Block)
-                return false;
-            if (focus == null || !focus.TrySpend(weapon.skill.fpCost))
-            {
-                FocusRejected?.Invoke();
-                return false;
-            }
-            Enter(PlayerStateId.Skill);
-            if (weapon.skill.dashDistance > 0f)
-                SkillMotion?.Invoke(weapon.skill.dashDistance);
-            return true;
-        }
+        public bool RequestSkill() => Request(BufferedAction.Skill);
 
         private AttackTimeline CurrentTimeline =>
             CurrentState == PlayerStateId.AttackHeavy ? weapon.heavy : weapon.light;
@@ -171,11 +150,12 @@ namespace SoulsGame.Player
                         return CurrentState == PlayerStateId.AttackLight && comboIndex + 1 < weapon.comboLength;
                     return action == BufferedAction.Dodge;
                 case PlayerStateId.Dodge:
-                    // إلغاء متأخر من التفادي إلى هجوم بعد انتهاء الحصانة
-                    return stateTime >= DodgeIFrameEnd &&
+                    // إلغاء متأخر من التفادي إلى هجوم — نقطة الإلغاء تتمدد مع
+                    // مضاعف الدرع (الصفائح تدفع ثمن ثقلها فعلاً)، والحصانة مطلقة
+                    return stateTime >= DodgeIFrameEnd * dodgeDurationMultiplier &&
                            (action == BufferedAction.LightAttack || action == BufferedAction.HeavyAttack);
                 default:
-                    return false; // Stagger / Death
+                    return false; // Stagger / Death / Cast / Skill (التزام كامل)
             }
         }
 
@@ -188,6 +168,8 @@ namespace SoulsGame.Player
                 case PlayerStateId.AttackHeavy:
                 case PlayerStateId.Dodge:
                 case PlayerStateId.Stagger:
+                case PlayerStateId.Cast:  // الضغط أثناء الإلقاء/المهارة يُخزَّن
+                case PlayerStateId.Skill: // لا يُهمل — الالتزام يبقى كاملاً
                     return true;
                 default:
                     return false;
@@ -227,6 +209,32 @@ namespace SoulsGame.Player
                         return false;
                     }
                     Enter(PlayerStateId.AttackHeavy);
+                    return true;
+
+                case BufferedAction.Cast:
+                {
+                    var spell = pendingCastSpell;
+                    if (spell == null)
+                        return false;
+                    if (focus == null || !focus.TrySpend(spell.fpCost))
+                    {
+                        FocusRejected?.Invoke();
+                        return false;
+                    }
+                    castSpell = spell;
+                    Enter(PlayerStateId.Cast);
+                    return true;
+                }
+
+                case BufferedAction.Skill:
+                    if (focus == null || !focus.TrySpend(weapon.skill.fpCost))
+                    {
+                        FocusRejected?.Invoke();
+                        return false;
+                    }
+                    Enter(PlayerStateId.Skill);
+                    if (weapon.skill.dashDistance > 0f)
+                        SkillMotion?.Invoke(weapon.skill.dashDistance);
                     return true;
 
                 default:

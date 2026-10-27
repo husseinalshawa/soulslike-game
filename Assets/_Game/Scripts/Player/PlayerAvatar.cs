@@ -29,8 +29,11 @@ namespace SoulsGame.Player
         // حدث زر التفاعل (E) — يستهلكه GameLoop للجلوس عند مواقع الراحة
         public event System.Action InteractPressed;
 
-        // تغيّر العتاد المجهز — يستهلكه سطر العتاد في الواجهة
-        public event System.Action GearChanged;
+        // تغيّر العتاد المجهز — رسالة جاهزة للإشعار (Equipped: X)
+        public event System.Action<string> GearChanged;
+
+        // لون السلاح خارج التعزيز — يُسند من البناء، والتوهج الأزرق يعود إليه
+        public Color weaponBaseColor = new Color(0.6f, 0.6f, 0.65f);
 
         public PlayerBrain Brain { get; private set; }
         public StaminaPool Stamina { get; private set; }
@@ -103,6 +106,36 @@ namespace SoulsGame.Player
             Armors.Add(newArmor);
             Armors.Select(newArmor);
             EquipCurrentArmor();
+        }
+
+        // ---- تبديل العتاد (Tab/G/V) — بإشعار مسمّى ----
+
+        public void TrySwitchWeapon()
+        {
+            var before = Weapons.Current;
+            var next = Weapons.Cycle();
+            if (ReferenceEquals(before, next)) return;
+            EquipCurrentWeapon();
+            GearChanged?.Invoke($"Equipped: {next.weaponName}");
+        }
+
+        public void TrySwitchArmor()
+        {
+            if (Brain.CurrentState != PlayerStateId.Locomotion && Brain.CurrentState != PlayerStateId.Block)
+                return;
+            var before = Armors.Current;
+            var next = Armors.Cycle();
+            if (ReferenceEquals(before, next)) return;
+            EquipCurrentArmor();
+            GearChanged?.Invoke($"Equipped: {next.armorName}");
+        }
+
+        public void TrySwitchSpell()
+        {
+            var before = Spells.Current;
+            var next = Spells.Cycle();
+            if (ReferenceEquals(before, next)) return;
+            GearChanged?.Invoke($"Readied: {next.spellName}");
         }
 
         // ضرر ضربة السلاح الحالية: السلاح + القوة + التعزيز.
@@ -181,6 +214,10 @@ namespace SoulsGame.Player
                 // شكل السلاح والـ hitbox يتبعان بيانات السلاح
                 weaponHitbox.transform.localScale = new Vector3(w.hitboxWidth, w.hitboxWidth, w.reach);
                 weaponHitbox.transform.localPosition = new Vector3(0f, 0.2f, 0.2f + w.reach * 0.5f);
+                // احفظ اللون الأساسي الحالي (خارج التعزيز) ليعود التوهج إليه
+                var weaponRenderer = weaponHitbox.GetComponent<Renderer>();
+                if (weaponRenderer != null && !Buff.IsActive)
+                    weaponBaseColor = weaponRenderer.material.color;
             }
         }
 
@@ -318,33 +355,15 @@ namespace SoulsGame.Player
             };
             Controls.SwitchWeapon.performed += _ =>
             {
-                if (InputLocked || IsRiding) return;
-                var before = Weapons.Current;
-                var next = Weapons.Cycle();
-                if (!ReferenceEquals(before, next))
-                {
-                    EquipCurrentWeapon();
-                    GearChanged?.Invoke();
-                }
+                if (!InputLocked && !IsRiding) TrySwitchWeapon();
             };
             Controls.SwitchArmor.performed += _ =>
             {
-                if (InputLocked || IsRiding) return;
-                if (Brain.CurrentState != PlayerStateId.Locomotion && Brain.CurrentState != PlayerStateId.Block)
-                    return;
-                var before = Armors.Current;
-                var next = Armors.Cycle();
-                if (!ReferenceEquals(before, next))
-                {
-                    EquipCurrentArmor();
-                    GearChanged?.Invoke();
-                }
+                if (!InputLocked && !IsRiding) TrySwitchArmor();
             };
             Controls.SwitchSpell.performed += _ =>
             {
-                if (InputLocked || IsRiding) return;
-                Spells.Cycle();
-                GearChanged?.Invoke();
+                if (!InputLocked && !IsRiding) TrySwitchSpell();
             };
             Controls.CastSpell.performed += _ =>
             {
@@ -395,14 +414,14 @@ namespace SoulsGame.Player
             Buff.Tick(dt);
             Brain.Tick(dt);
 
-            // السلاح يتوهج أزرق أثناء التعزيز
+            // السلاح يتوهج أزرق أثناء التعزيز — ويعود للونه الأساسي المحفوظ
             if (weaponHitbox != null)
             {
                 var weaponRenderer = weaponHitbox.GetComponent<Renderer>();
                 if (weaponRenderer != null)
                     weaponRenderer.material.color = Buff.IsActive
                         ? new Color(0.45f, 0.65f, 1f)
-                        : new Color(0.6f, 0.6f, 0.65f);
+                        : weaponBaseColor;
             }
 
             if (IsRiding && horse != null)

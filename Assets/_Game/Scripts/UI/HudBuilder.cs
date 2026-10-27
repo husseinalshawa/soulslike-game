@@ -293,8 +293,21 @@ namespace SoulsGame.UI
 
             var label = go.AddComponent<LoadoutLabel>();
             label.label = text;
+            // لا بناء نص كل إطار: يُبنى فقط حين يتغير أحد الأسماء الثلاثة
+            string cachedWeapon = null, cachedSpell = null, cachedArmor = null, cachedText = "";
             label.Bind(() =>
-                $"{player.Weapons.Current?.weaponName}  |  {player.Spells.Current?.spellName}  |  {player.Armors.Current?.armorName}");
+            {
+                string w = player.Weapons.Current?.weaponName;
+                string s = player.Spells.Current?.spellName;
+                string a = player.Armors.Current?.armorName;
+                if (!ReferenceEquals(w, cachedWeapon) || !ReferenceEquals(s, cachedSpell) ||
+                    !ReferenceEquals(a, cachedArmor))
+                {
+                    cachedWeapon = w; cachedSpell = s; cachedArmor = a;
+                    cachedText = $"{w}  |  {s}  |  {a}";
+                }
+                return cachedText;
+            });
         }
 
         private static void BuildSoulsCounter(Transform parent, PlayerAvatar player)

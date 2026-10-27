@@ -81,7 +81,7 @@ namespace SoulsGame.Data
         {
             var w = ScriptableObject.CreateInstance<WeaponData>();
             w.weaponName = "Spear";
-            w.reach = 2.4f;
+            w.reach = 2.4f; // شحنة المهارة 2.4 + المدى 2.4 = 4.8م الموعودة (موازنة المرحلة 6)
             w.hitboxWidth = 0.15f;
             w.lightDamage = 22f; w.lightPoiseDamage = 12f; w.lightStaminaCost = 14f;
             w.light = new AttackTimeline(0.30f, 0.22f, 0.45f, 0.60f);
@@ -95,7 +95,7 @@ namespace SoulsGame.Data
                 timeline = new AttackTimeline(0.35f, 0.30f, 0.60f, 0.90f),
                 damage = 45f,
                 poiseDamage = 35f,
-                dashDistance = 2f,
+                dashDistance = 2.4f,
                 radius = 0f,
                 hitCount = 1
             };

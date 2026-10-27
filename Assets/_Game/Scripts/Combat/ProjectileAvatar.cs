@@ -22,9 +22,14 @@ namespace SoulsGame.Combat
 
         // أهداف القذائف الصالحة: الأحياء المسجلون في الـ lock-on — ما عدا البوس
         // قبل بدء معركته (لا قنص للمعركة من خلف الضباب وهو خامل).
+        // قائمة معاد تدويرها — لا تخصيص ذاكرة كل إطار (خيط اللعبة الرئيسي وحده)
+        private static readonly List<(object target, Vector3 position, float radius)> reusableCandidates
+            = new List<(object, Vector3, float)>();
+
         public static List<(object target, Vector3 position, float radius)> CollectCandidates()
         {
-            var candidates = new List<(object, Vector3, float)>();
+            var candidates = reusableCandidates;
+            candidates.Clear();
             var targets = LockOnSystem.Targets;
             for (int i = 0; i < targets.Count; i++)
             {
