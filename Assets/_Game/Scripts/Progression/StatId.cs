@@ -4,6 +4,7 @@ namespace SoulsGame.Progression
     {
         Vigor,     // صلابة: صحة قصوى
         Endurance, // جَلَد: ستامينا قصوى
-        Strength   // قوة: ضرر السلاح
+        Strength,  // قوة: ضرر السلاح
+        Mind       // رُوحانية: تركيز (FP) أقصى
     }
 }

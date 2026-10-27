@@ -10,6 +10,8 @@ namespace SoulsGame.Data
         public float vigorHpPerPoint = 12f;
         public float enduranceStaminaPerPoint = 6f;
         public float strengthDamagePerPoint = 2f;
+        public float mindFocusPerPoint = 5f;
+        public float baseFocus = 60f;
         public int baseCost = 100;
         public int costIncrement = 25;
     }
