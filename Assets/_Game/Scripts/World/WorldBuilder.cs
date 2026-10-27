@@ -31,15 +31,23 @@ namespace SoulsGame.World
 
         public static void ApplyTheme(WorldTheme theme)
         {
-            // يعاد استدعاؤها كل إطار أثناء تحول اللون — الشمس تُعاد استخداماً لا تُنشأ
             var sunGo = GameObject.Find("Sun");
             if (sunGo == null) sunGo = new GameObject("Sun");
             var sun = sunGo.GetComponent<Light>();
             if (sun == null) sun = sunGo.AddComponent<Light>();
-            sun.type = LightType.Directional;
-            sun.intensity = theme.sunIntensity;
-            sun.color = theme.sunColor;
-            sunGo.transform.rotation = Quaternion.Euler(theme.sunPitchDegrees, theme.sunYawDegrees, 0f);
+            ApplyThemeTo(theme, sun);
+        }
+
+        // نسخة بشمس مُمرَّرة (كاش المستدعي) — تحول اللون يستدعيها كل إطار بلا Find.
+        public static void ApplyThemeTo(WorldTheme theme, Light sun)
+        {
+            if (sun != null)
+            {
+                sun.type = LightType.Directional;
+                sun.intensity = theme.sunIntensity;
+                sun.color = theme.sunColor;
+                sun.transform.rotation = Quaternion.Euler(theme.sunPitchDegrees, theme.sunYawDegrees, 0f);
+            }
 
             RenderSettings.fog = true;
             RenderSettings.fogColor = theme.fogColor;
@@ -252,11 +260,15 @@ namespace SoulsGame.World
             ChapelBox(parent, "ChapelAltar", altarPosition, new Vector3(2.4f, 1.2f, 1.2f),
                 new Color(stone.r + 0.08f, stone.g + 0.06f, stone.b + 0.04f));
 
-            // سطح الماء: مستوى رقيق يغمر الحوض كله (بصري — بلا تصادم)
-            var water = GameBootstrap.CreateBox("MarshWater",
-                new Vector3(c.x, WorldHeightmap.MarshWaterY, c.z),
-                new Vector3(WorldHeightmap.MarshRadius * 2f, 0.04f, WorldHeightmap.MarshRadius * 2f),
-                new Color(0.25f, 0.4f, 0.42f));
+            // سطح الماء: أسطوانة مفلطحة تطابق دائرة الحوض — لا زوايا مربع
+            // طافية فوق أرض جافة (بصري — بلا تصادم)
+            var water = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            water.name = "MarshWater";
+            water.transform.position = new Vector3(c.x, WorldHeightmap.MarshWaterY, c.z);
+            // مقياس الأسطوانة: القطر = نصف القطر (المقياس نصف القطرين) — 70 يعطي قطر 70
+            water.transform.localScale = new Vector3(
+                WorldHeightmap.MarshRadius * 2f, 0.02f, WorldHeightmap.MarshRadius * 2f);
+            GameBootstrap.Tint(water, new Color(0.25f, 0.4f, 0.42f));
             var waterCollider = water.GetComponent<Collider>();
             if (waterCollider != null) waterCollider.enabled = false;
             water.transform.SetParent(parent, true);

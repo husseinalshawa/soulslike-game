@@ -130,6 +130,75 @@ namespace SoulsGame.Tests
                 "شحنة الرمح 2.4 + مدى 2.4 = 4.8م الموعودة");
         }
 
+        // ---- الثانويات 8-12 ----
+
+        [Test]
+        public void NoDialogue_NoAltar_WhileRiding()
+        {
+            var bootstrap = Build();
+            var loop = bootstrap.Loop;
+            var player = bootstrap.Player;
+
+            player.transform.position = new Vector3(50f, 5f, -80f);
+            Assert.IsTrue(player.TrySummonHorse());
+
+            // شخصية تحت السرج مباشرة: E لا يفتح حواراً راكباً
+            var npcGo = new GameObject("Npc_Test");
+            npcGo.transform.position = player.transform.position;
+            var npc = npcGo.AddComponent<Story.NpcAvatar>();
+            npc.Questline = Story.StoryLibrary.Mara();
+            loop.npcs = new[] { npc };
+            loop.HandleInteract();
+            Assert.IsFalse(loop.Dialogue.IsActive, "لا حوار من على السرج");
+
+            // المذبح كذلك: راكباً فوقه بالرماد لا يضع
+            player.KeyItems.Add(Story.StoryLibrary.WardensAshes);
+            loop.npcs = null;
+            player.transform.position = loop.altarPosition.Value;
+            loop.HandleInteract();
+            Assert.IsFalse(loop.Story.IsSet(Story.StoryFlag.AshPlaced), "لا مذبح من على السرج");
+        }
+
+        [Test]
+        public void ThemeShift_TicksToCompletion()
+        {
+            var bootstrap = Build();
+            bootstrap.Loop.Story.Set(Story.StoryFlag.AshPlaced); // يبدأ التحول
+            Assert.IsNotNull(bootstrap.ActiveThemeShift);
+
+            for (int i = 0; i < 17; i++)
+                bootstrap.TickThemeShift(0.5f); // 8.5ث > 8
+
+            Assert.IsNull(bootstrap.ActiveThemeShift, "التحول يكتمل ويتوقف");
+        }
+
+        [Test]
+        public void MarshWater_IsCylinder()
+        {
+            var bootstrap = Build();
+            var water = bootstrap.MarshWater;
+            Assert.IsNotNull(water, "سطح الماء مبني");
+            Assert.IsNotNull(water.GetComponent<CapsuleCollider>(),
+                "أسطوانة لا مكعب — لا زوايا ماء طافية خارج الحوض");
+            Assert.AreEqual(70f, water.transform.localScale.x, 0.001f);
+        }
+
+        [Test]
+        public void LockOnBar_RefreshFollowsTarget()
+        {
+            var bootstrap = Build();
+            var bar = bootstrap.LockOnBar;
+            Assert.IsNotNull(bar, "شريط هدف واحد يتبع القفل");
+
+            Assert.IsFalse(bar.Refresh(null), "بلا قفل: مخفي");
+            Assert.IsTrue(bar.Refresh(bootstrap.AllEnemies[3]), "أي جندي مقفول يظهر شريطه");
+            Assert.IsTrue(bar.Refresh(bootstrap.AllEnemies[8]), "والمرتّل كذلك");
+            Assert.IsFalse(bar.Refresh(bootstrap.Boss), "البوس لشريطه الكبير وحده");
+
+            bootstrap.AllEnemies[3].Damageable.Health.TakeDamage(100000f);
+            Assert.IsFalse(bar.Refresh(bootstrap.AllEnemies[3]), "موت الهدف يخفيه فوراً");
+        }
+
         [Test]
         public void FocusPool_TrySpendZero_KeepsRegenTimer()
         {

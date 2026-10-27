@@ -55,9 +55,13 @@ namespace SoulsGame.Core
         public Story.KeyItemPickup BellPickup { get; private set; }
         public ThemeShift ActiveThemeShift { get; private set; }
         public Feel.HitStopLogic HitStop { get; } = new Feel.HitStopLogic();
+        public UI.EnemyHealthBar LockOnBar { get; private set; }
+        public GameObject MarshWater { get; private set; }
 
         private UI.Toast victoryBanner;
         private WorldTheme workingTheme;
+        private Light cachedSun;
+        private Camera cachedCamera;
 
         private void Awake()
         {
@@ -200,6 +204,7 @@ namespace SoulsGame.Core
         {
             var parent = new GameObject("SunkenChapel");
             var chapel = WorldBuilder.BuildChapel(parent.transform, worldTheme);
+            MarshWater = chapel.WaterPlane;
 
             // موقع الراحة الرابع (site 3) على أرض جافة قبالة المستنقع من الجنوب-الغرب
             // (خارج الحوض ومنطقة دمجه ومربع سطح الماء — لا راحة غارقة)
@@ -304,14 +309,27 @@ namespace SoulsGame.Core
             HitStop.Tick(Time.unscaledDeltaTime);
             Time.timeScale = HitStop.CurrentScale;
 
+            TickThemeShift(Time.deltaTime);
+        }
+
+        // تكّة تحول اللون — مفصولة عن Update لتُختبر في الشيم، وبكاش
+        // للشمس والكاميرا (لا GameObject.Find كل إطار).
+        public void TickThemeShift(float dt)
+        {
             if (ActiveThemeShift == null)
                 return;
-            ActiveThemeShift.Tick(Time.deltaTime);
+            ActiveThemeShift.Tick(dt);
             var blended = ActiveThemeShift.Blend(workingTheme);
-            WorldBuilder.ApplyTheme(blended);
-            var camera = Camera.main;
-            if (camera != null)
-                camera.backgroundColor = blended.skyColor;
+            if (cachedSun == null)
+            {
+                var sunGo = GameObject.Find("Sun");
+                cachedSun = sunGo != null ? sunGo.GetComponent<Light>() : null;
+            }
+            if (cachedCamera == null)
+                cachedCamera = Camera.main;
+            WorldBuilder.ApplyThemeTo(blended, cachedSun);
+            if (cachedCamera != null)
+                cachedCamera.backgroundColor = blended.skyColor;
             if (ActiveThemeShift.Done)
                 ActiveThemeShift = null; // اكتمل — السمة الدافئة مطبقة
         }
@@ -467,7 +485,7 @@ namespace SoulsGame.Core
         private void BuildHudAndGameLoop()
         {
             var (_, _, deathScreen) = UI.HudBuilder.BuildPlayerHud(Player);
-            UI.HudBuilder.BuildEnemyBar(Enemy, Player.lockOn);
+            LockOnBar = UI.HudBuilder.BuildEnemyBar(Player.lockOn);
 
             Loop = gameObject.AddComponent<GameLoop>();
             Loop.Initialize(Player, AllEnemies, deathScreen);

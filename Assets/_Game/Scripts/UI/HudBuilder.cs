@@ -390,11 +390,10 @@ namespace SoulsGame.UI
             return screen;
         }
 
-        public static EnemyHealthBar BuildEnemyBar(EnemyAvatar enemy, LockOnSystem lockOn)
+        // شريط واحد حر في العالم — يتموضع فوق هدف القفل الحالي كل إطار.
+        public static EnemyHealthBar BuildEnemyBar(LockOnSystem lockOn)
         {
-            var canvasGo = new GameObject("EnemyHealthBar");
-            canvasGo.transform.SetParent(enemy.transform, false);
-            canvasGo.transform.localPosition = new Vector3(0f, 1.6f, 0f);
+            var canvasGo = new GameObject("LockOnHealthBar");
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             var canvasRect = canvasGo.GetComponent<RectTransform>();
@@ -412,7 +411,6 @@ namespace SoulsGame.UI
             fillRect.sizeDelta = Vector2.zero;
 
             var bar = canvasGo.AddComponent<EnemyHealthBar>();
-            bar.owner = enemy;
             bar.lockOn = lockOn;
             bar.fill = fillRect;
             bar.root = background.gameObject;

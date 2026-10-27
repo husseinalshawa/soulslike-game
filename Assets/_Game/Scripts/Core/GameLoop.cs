@@ -71,17 +71,21 @@ namespace SoulsGame.Core
                 levelUpMenu.Close();
                 return;
             }
-            var npc = NearestNpcInRange();
-            if (npc != null)
+            // لا حوار ولا مذبح من على السرج (الراحة تبقى كما كانت)
+            if (!player.IsRiding)
             {
-                StartDialogue(npc);
-                return;
-            }
-            if (altarPosition.HasValue &&
-                Vector3.Distance(player.transform.position, altarPosition.Value) <= AltarRadius)
-            {
-                InteractAltar();
-                return;
+                var npc = NearestNpcInRange();
+                if (npc != null)
+                {
+                    StartDialogue(npc);
+                    return;
+                }
+                if (altarPosition.HasValue &&
+                    Vector3.Distance(player.transform.position, altarPosition.Value) <= AltarRadius)
+                {
+                    InteractAltar();
+                    return;
+                }
             }
             if (Graces.CanRest(player.transform.position, out int siteId))
                 RestAtGrace(siteId);
