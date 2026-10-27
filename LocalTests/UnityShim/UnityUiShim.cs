@@ -64,6 +64,7 @@ namespace UnityEngine.UI
     public class Graphic : Behaviour
     {
         public Color color;
+        public bool raycastTarget = true;
         public RectTransform rectTransform => GetComponent<RectTransform>();
     }
 

@@ -165,22 +165,29 @@ namespace SoulsGame.Core
         private void WireFeel()
         {
             var rig = Player.cameraRig;
-            System.Action onEnemyHit = () =>
+            System.Action<Vector3, float> onEnemyHit = (position, amount) =>
             {
                 var state = Player.Brain.CurrentState;
                 bool heavy = state == PlayerStateId.AttackHeavy || state == PlayerStateId.Skill;
                 HitStop.Request(heavy ? 0.09f : 0.06f);
                 if (heavy && rig != null)
                     rig.Shake.Shake(0.15f, 0.25f);
+                Feel.DamageNumber.Spawn(position + Vector3.up * 1.6f, amount);
             };
             foreach (var enemy in AllEnemies)
                 if (enemy != null)
-                    enemy.Damageable.Damaged += _ => onEnemyHit();
+                {
+                    var self = enemy; // التقاط النسخة لا متغير الحلقة
+                    self.Damageable.Damaged += packet =>
+                        onEnemyHit(self.transform.position, packet.HealthDamage);
+                }
             if (Boss != null)
             {
-                Boss.Damageable.Damaged += _ => onEnemyHit();
+                Boss.Damageable.Damaged += packet =>
+                    onEnemyHit(Boss.transform.position, packet.HealthDamage);
                 Boss.SlamLanded += () => rig?.Shake.Shake(0.35f, 0.4f);
             }
+            Loop.fadeOverlay = UI.HudBuilder.BuildFadeOverlay();
             Player.Damageable.Damaged += _ => HitStop.Request(0.05f);
             Player.Brain.GuardBroken += () => rig?.Shake.Shake(0.25f, 0.3f);
         }

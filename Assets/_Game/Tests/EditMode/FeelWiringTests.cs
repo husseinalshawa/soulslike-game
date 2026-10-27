@@ -71,6 +71,41 @@ namespace SoulsGame.Tests
         }
 
         [Test]
+        public void DamageNumber_RiseAndAlphaByTime()
+        {
+            var start = DamageNumber.Evaluate(0f);
+            Assert.AreEqual(0f, start.rise, 0.001f);
+            Assert.AreEqual(1f, start.alpha, 0.001f);
+
+            var mid = DamageNumber.Evaluate(0.4f);
+            Assert.AreEqual(0.6f, mid.rise, 0.01f, "منتصف المدة = منتصف الصعود (1.2م إجمالاً)");
+            Assert.AreEqual(0.5f, mid.alpha, 0.01f);
+
+            var end = DamageNumber.Evaluate(0.8f);
+            Assert.AreEqual(1.2f, end.rise, 0.01f);
+            Assert.AreEqual(0f, end.alpha, 0.001f);
+        }
+
+        [Test]
+        public void Death_FadesIn_RespawnFadesOut()
+        {
+            var bootstrap = Build();
+            var loop = bootstrap.Loop;
+
+            var overlayGo = new GameObject("FadeOverlay");
+            var overlay = overlayGo.AddComponent<UI.FadeOverlay>();
+            loop.fadeOverlay = overlay;
+
+            bootstrap.Player.Damageable.Health.TakeDamage(100000f);
+            overlay.Fade.Tick(0.6f);
+            Assert.AreEqual(1f, overlay.Fade.Alpha, 0.01f, "الموت يملأ الغطاء الأسود خلال 0.6ث");
+
+            loop.Respawn();
+            overlay.Fade.Tick(0.5f);
+            Assert.AreEqual(0f, overlay.Fade.Alpha, 0.01f, "الإحياء يكشف خلال 0.5ث");
+        }
+
+        [Test]
         public void GuardBreak_ShakesCamera()
         {
             var bootstrap = Build();

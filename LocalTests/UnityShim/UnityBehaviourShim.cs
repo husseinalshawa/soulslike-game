@@ -98,6 +98,7 @@ namespace UnityEngine
         public Vector3 right = Vector3.right;
         public Vector3 up = Vector3.up;
         public Transform parent;
+        public void SetAsLastSibling() { }
         public void SetParent(Transform parent) { this.parent = parent; }
         public void SetParent(Transform parent, bool worldPositionStays) { this.parent = parent; }
         public void LookAt(Vector3 worldPosition) { }

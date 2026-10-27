@@ -114,6 +114,25 @@ namespace SoulsGame.UI
             return menu;
         }
 
+        // غطاء التلاشي الأسود — فوق كل عناصر الواجهة.
+        public static FadeOverlay BuildFadeOverlay()
+        {
+            var canvas = GameObject.Find("HUD");
+            if (canvas == null) return null;
+
+            var cover = CreateImage(canvas.transform, "FadeOverlay", new Color(0f, 0f, 0f, 0f));
+            var rect = cover.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.sizeDelta = Vector2.zero;
+            cover.transform.SetAsLastSibling();
+            cover.raycastTarget = false;
+
+            var overlay = cover.gameObject.AddComponent<FadeOverlay>();
+            overlay.image = cover;
+            return overlay;
+        }
+
         // شريط الحوار أسفل الشاشة: اسم ذهبي + سطر + تلميح E.
         public static DialoguePanel BuildDialoguePanel()
         {

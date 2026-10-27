@@ -29,6 +29,7 @@ namespace SoulsGame.Core
         public Vector3? altarPosition;
         public DialoguePanel dialoguePanel;
         public Toast banner;
+        public FadeOverlay fadeOverlay;
         public const float AltarRadius = 2.5f;
         public const int AltarReward = 3000;
 
@@ -200,6 +201,7 @@ namespace SoulsGame.Core
             if (levelUpMenu != null && levelUpMenu.IsOpen)
                 levelUpMenu.Close();
             Dialogue.Abort(); // موت منتصف حوار: جلسة تنتهي بلا فعل إكمال
+            fadeOverlay?.Fade.FadeTo(1f, 0.6f); // تلاشٍ للأسود قبل YOU DIED
             player.Buff.Clear(); // التعزيز يسقط بالموت
             Ledger.Drop(player.transform.position, player.Wallet.TakeAll());
             RefreshStainMarker();
@@ -282,6 +284,7 @@ namespace SoulsGame.Core
             player.Stamina.ResetToFull();
             player.Focus.ResetToFull();
             player.Brain.Revive();
+            fadeOverlay?.Fade.FadeTo(0f, 0.5f); // الكشف بعد العودة
 
             if (enemies != null)
                 foreach (var enemy in enemies)

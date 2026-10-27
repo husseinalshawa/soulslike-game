@@ -9,6 +9,7 @@ namespace UnityEngine
         public float x, y;
         public Vector2(float x, float y) { this.x = x; this.y = y; }
         public static Vector2 zero => new Vector2(0, 0);
+        public static Vector2 one => new Vector2(1, 1);
         public float sqrMagnitude => x * x + y * y;
         public float magnitude => (float)Math.Sqrt(x * x + y * y);
         public static Vector2 operator +(Vector2 a, Vector2 b) => new Vector2(a.x + b.x, a.y + b.y);
@@ -24,6 +25,15 @@ namespace UnityEngine
         public static Color red => new Color(1, 0, 0);
         public static Color green => new Color(0, 1, 0);
         public static Color clear => new Color(0, 0, 0, 0);
+    }
+
+    public class TextMesh : Component
+    {
+        public string text;
+        public Color color;
+        public int fontSize;
+        public float characterSize;
+        public TextAnchor anchor;
     }
 
     public class Shader : Object
