@@ -49,6 +49,14 @@ namespace SoulsGame.EditorTools
                 w.lightStaminaCost = 0f;
                 w.light = new AttackTimeline(0.6f, 0.3f, 1.2f, 1.2f);
             });
+            CreateAssetIfMissing<ProgressionData>("Assets/_Game/Data/Progression.asset", null);
+            CreateAssetIfMissing<CharacterStats>("Assets/_Game/Data/BossStats.asset", s =>
+            {
+                s.maxHealth = 1000f;
+                s.maxPoise = 120f;
+                s.runSpeed = 3.5f;
+                s.soulsReward = 2000;
+            });
             AssetDatabase.SaveAssets();
             Debug.Log("SoulsGame: data assets ready under Assets/_Game/Data/");
         }
@@ -64,6 +72,8 @@ namespace SoulsGame.EditorTools
             bootstrap.playerWeapon = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Sword_Basic.asset");
             bootstrap.enemyStats = AssetDatabase.LoadAssetAtPath<CharacterStats>("Assets/_Game/Data/EnemyMeleeStats.asset");
             bootstrap.enemyWeapon = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Enemy_Sword.asset");
+            bootstrap.progressionData = AssetDatabase.LoadAssetAtPath<ProgressionData>("Assets/_Game/Data/Progression.asset");
+            bootstrap.bossStats = AssetDatabase.LoadAssetAtPath<CharacterStats>("Assets/_Game/Data/BossStats.asset");
 
             System.IO.Directory.CreateDirectory("Assets/_Game/Scenes");
             EditorSceneManager.SaveScene(scene, "Assets/_Game/Scenes/Arena.unity");

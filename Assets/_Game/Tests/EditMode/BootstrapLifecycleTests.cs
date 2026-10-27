@@ -37,5 +37,25 @@ namespace SoulsGame.Tests
 
             Assert.AreEqual(100, bootstrap.Player.Wallet.Current, "قتل الجندي يمنح 100 روح");
         }
+
+        [Test]
+        public void GracesAndProgression_WiredIntoScene()
+        {
+            var go = new GameObject("Bootstrap");
+            var bootstrap = go.AddComponent<GameBootstrap>();
+
+            Assert.IsNotNull(bootstrap.Loop, "GameLoop مكشوف من البناء");
+            Assert.AreEqual(2, bootstrap.Loop.Graces.SiteCount, "موقعا راحة مبنيان");
+
+            var player = bootstrap.Player;
+            Assert.IsNotNull(player.Progression, "تقدم اللاعب تهيأ");
+
+            player.Wallet.Add(100);
+            Assert.IsTrue(player.Progression.TryLevelUp(Progression.StatId.Vigor, player.Wallet));
+            player.ApplyProgression();
+
+            Assert.AreEqual(112f, player.Damageable.Health.Max, "صلابة +1 ترفع الحد الأقصى إلى 112");
+            Assert.AreEqual(112f, player.Damageable.Health.Current, "ممتلئ بعد الرفع (يحدث عند الراحة)");
+        }
     }
 }

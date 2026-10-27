@@ -2,6 +2,7 @@ using SoulsGame.Combat;
 using SoulsGame.Data;
 using SoulsGame.Enemies;
 using SoulsGame.Player;
+using SoulsGame.Progression;
 using UnityEngine;
 
 namespace SoulsGame.Core
@@ -16,9 +17,12 @@ namespace SoulsGame.Core
         public WeaponData playerWeapon;
         public CharacterStats enemyStats;
         public WeaponData enemyWeapon;
+        public ProgressionData progressionData;
+        public CharacterStats bossStats; // يستخدمه بناء البوس (المهمة 8)
 
         public PlayerAvatar Player { get; private set; }
         public EnemyAvatar Enemy { get; private set; }
+        public GameLoop Loop { get; private set; }
 
         private void Awake()
         {
@@ -53,8 +57,40 @@ namespace SoulsGame.Core
             var (_, _, deathScreen) = UI.HudBuilder.BuildPlayerHud(Player);
             UI.HudBuilder.BuildEnemyBar(Enemy, Player.lockOn);
 
-            var gameLoop = gameObject.AddComponent<GameLoop>();
-            gameLoop.Initialize(Player, new[] { Enemy }, deathScreen);
+            Loop = gameObject.AddComponent<GameLoop>();
+            Loop.Initialize(Player, new[] { Enemy }, deathScreen);
+            Loop.toast = UI.HudBuilder.BuildToast(Player);
+            Loop.levelUpMenu = UI.HudBuilder.BuildLevelUpMenu(Player);
+
+            BuildGraceSites();
+        }
+
+        private void BuildGraceSites()
+        {
+            // الموقع 0 (مكتشف) أضافته Initialize عند نقطة البداية؛ الموقع 1 أمام بوابة البوس
+            var bossGatePosition = new Vector3(3f, 0f, 16f);
+            Loop.Graces.AddSite(1, bossGatePosition, discovered: false);
+
+            Loop.graceMarkers = new[]
+            {
+                BuildGraceMarker(0, Player.transform.position, lit: true),
+                BuildGraceMarker(1, bossGatePosition, lit: false)
+            };
+        }
+
+        private GraceSiteMarker BuildGraceMarker(int siteId, Vector3 position, bool lit)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            go.name = $"Grace_{siteId}";
+            go.transform.position = position + Vector3.up * 0.45f;
+            go.transform.localScale = new Vector3(0.6f, 0.45f, 0.6f);
+            var collider = go.GetComponent<Collider>();
+            if (collider != null) collider.enabled = false;
+
+            var marker = go.AddComponent<GraceSiteMarker>();
+            marker.siteId = siteId;
+            marker.SetLit(lit);
+            return marker;
         }
 
         private EnemyAvatar BuildEnemy(Vector3 position, Vector3 patrolA, Vector3 patrolB)
@@ -214,6 +250,7 @@ namespace SoulsGame.Core
             var avatar = go.AddComponent<PlayerAvatar>();
             avatar.stats = playerStats;
             avatar.weapon = playerWeapon;
+            avatar.progressionData = progressionData;
             avatar.weaponHitbox = hitbox;
 
             go.SetActive(true); // الآن تجري Awake وكل الحقول مضبوطة

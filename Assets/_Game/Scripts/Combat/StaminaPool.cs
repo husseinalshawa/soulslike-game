@@ -12,7 +12,7 @@ namespace SoulsGame.Combat
         private float sprintCostPerSecond;
         private float delayRemaining;
 
-        public float Max { get; }
+        public float Max { get; private set; }
         public float Current { get; private set; }
 
         public StaminaPool(float max, float regenPerSecond, float regenDelay, float blockingRegenMultiplier)
@@ -29,6 +29,14 @@ namespace SoulsGame.Combat
         public void ResetToFull()
         {
             Current = Max;
+            delayRemaining = 0f;
+        }
+
+        // رفع المستوى: حد أقصى جديد مع ملء كامل.
+        public void SetMax(float newMax)
+        {
+            Max = newMax;
+            Current = newMax;
             delayRemaining = 0f;
         }
 

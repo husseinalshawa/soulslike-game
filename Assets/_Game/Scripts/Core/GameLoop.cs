@@ -15,6 +15,9 @@ namespace SoulsGame.Core
         public PlayerAvatar player;
         public EnemyAvatar[] enemies;
         public DeathScreen deathScreen;
+        public Toast toast;
+        public LevelUpMenu levelUpMenu;
+        public GraceSiteMarker[] graceMarkers;
 
         public BloodstainLedger Ledger { get; } = new BloodstainLedger();
         public GraceSystem Graces { get; } = new GraceSystem();
@@ -29,7 +32,31 @@ namespace SoulsGame.Core
             Graces.AddSite(0, playerAvatar.transform.position, discovered: true);
 
             player.Damageable.Died += OnPlayerDied;
+            player.InteractPressed += OnInteract;
             deathScreen.OnRespawnRequested = Respawn;
+        }
+
+        private void OnInteract()
+        {
+            if (levelUpMenu != null && levelUpMenu.IsOpen)
+                return;
+            if (Graces.CanRest(player.transform.position, out int siteId))
+                RestAtGrace(siteId);
+        }
+
+        public void RestAtGrace(int siteId)
+        {
+            Graces.RestAt(siteId);
+            player.Damageable.ResetToFull();
+            player.Stamina.ResetToFull();
+
+            if (enemies != null)
+                foreach (var enemy in enemies)
+                    if (enemy != null)
+                        enemy.ResetToSpawn();
+
+            toast?.Show("Rested at grace");
+            levelUpMenu?.Open();
         }
 
         private void OnPlayerDied()
@@ -48,7 +75,18 @@ namespace SoulsGame.Core
             if (recovered > 0)
             {
                 player.Wallet.Add(recovered);
+                toast?.Show($"Recovered {recovered} souls");
                 RefreshStainMarker();
+            }
+
+            int discovered = Graces.TryDiscover(player.transform.position);
+            if (discovered >= 0)
+            {
+                toast?.Show("Grace discovered");
+                if (graceMarkers != null)
+                    foreach (var marker in graceMarkers)
+                        if (marker != null && marker.siteId == discovered)
+                            marker.SetLit(true);
             }
         }
 

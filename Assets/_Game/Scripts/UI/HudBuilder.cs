@@ -30,6 +30,103 @@ namespace SoulsGame.UI
             return (health, stamina, death);
         }
 
+        public static Toast BuildToast(PlayerAvatar player)
+        {
+            var canvas = GameObject.Find("HUD");
+            var parent = canvas != null ? canvas.transform : player.transform;
+
+            var textGo = new GameObject("Toast");
+            textGo.transform.SetParent(parent, false);
+            var text = textGo.AddComponent<Text>();
+            text.fontSize = 24;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.color = new Color(0.9f, 0.85f, 0.65f);
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var rect = textGo.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, 120f);
+            rect.sizeDelta = new Vector2(600f, 40f);
+            textGo.SetActive(false);
+
+            var holderGo = new GameObject("ToastController");
+            holderGo.transform.SetParent(parent, false);
+            var toast = holderGo.AddComponent<Toast>();
+            toast.label = text;
+            return toast;
+        }
+
+        public static LevelUpMenu BuildLevelUpMenu(PlayerAvatar player)
+        {
+            var canvas = GameObject.Find("HUD");
+            var parent = canvas != null ? canvas.transform : player.transform;
+
+            var panelImage = CreateImage(parent, "LevelUpMenu", new Color(0.04f, 0.04f, 0.07f, 0.92f));
+            var rect = panelImage.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(460f, 300f);
+
+            var menuGo = new GameObject("LevelUpMenuController");
+            menuGo.transform.SetParent(parent, false);
+            var menu = menuGo.AddComponent<LevelUpMenu>();
+            menu.panel = panelImage.gameObject;
+
+            menu.header = MakeLabel(panelImage.transform, new Vector2(0f, 110f), 18);
+            menu.vigorValue = MakeLabel(panelImage.transform, new Vector2(-40f, 55f), 18);
+            menu.vigorButton = MakeButton(panelImage.transform, new Vector2(170f, 55f));
+            menu.enduranceValue = MakeLabel(panelImage.transform, new Vector2(-40f, 10f), 18);
+            menu.enduranceButton = MakeButton(panelImage.transform, new Vector2(170f, 10f));
+            menu.strengthValue = MakeLabel(panelImage.transform, new Vector2(-40f, -35f), 18);
+            menu.strengthButton = MakeButton(panelImage.transform, new Vector2(170f, -35f));
+
+            // زر «انهض» للإغلاق
+            var rise = MakeButton(panelImage.transform, new Vector2(0f, -110f), 140f, "Rise");
+            rise.onClick.AddListener(menu.Close);
+
+            menu.Initialize(player);
+            menu.panel.SetActive(false);
+            return menu;
+        }
+
+        private static Text MakeLabel(Transform parent, Vector2 position, int fontSize)
+        {
+            var go = new GameObject("Label");
+            go.transform.SetParent(parent, false);
+            var text = go.AddComponent<Text>();
+            text.fontSize = fontSize;
+            text.alignment = TextAnchor.MiddleLeft;
+            text.color = new Color(0.85f, 0.82f, 0.72f);
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = new Vector2(320f, 36f);
+            return text;
+        }
+
+        private static Button MakeButton(Transform parent, Vector2 position, float width = 44f, string caption = "+")
+        {
+            var image = CreateImage(parent, "Button", new Color(0.25f, 0.22f, 0.12f));
+            var rect = image.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = new Vector2(width, 36f);
+
+            var label = MakeLabel(image.transform, Vector2.zero, 18);
+            label.alignment = TextAnchor.MiddleCenter;
+            label.text = caption;
+            var labelRect = label.GetComponent<RectTransform>();
+            labelRect.sizeDelta = new Vector2(width, 36f);
+
+            return image.gameObject.AddComponent<Button>();
+        }
+
         private static void BuildSoulsCounter(Transform parent, PlayerAvatar player)
         {
             var background = CreateImage(parent, "SoulsCounter", new Color(0f, 0f, 0f, 0.6f));

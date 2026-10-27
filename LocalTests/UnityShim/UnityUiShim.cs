@@ -66,4 +66,16 @@ namespace UnityEngine.UI
         public int fontSize;
         public TextAnchor alignment;
     }
+
+    public class Button : Behaviour
+    {
+        public class ButtonClickedEvent
+        {
+            public void AddListener(Action call) { }
+            public void Invoke() { }
+        }
+
+        public ButtonClickedEvent onClick = new ButtonClickedEvent();
+        public bool interactable = true;
+    }
 }

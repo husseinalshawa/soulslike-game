@@ -13,13 +13,21 @@ namespace SoulsGame.Player
     {
         public CharacterStats stats;
         public WeaponData weapon;
+        public ProgressionData progressionData;
         public Hitbox weaponHitbox;
         public LockOnSystem lockOn;
         public ThirdPersonCamera cameraRig;
 
+        // توقيف إدخال القتال والحركة أثناء القوائم (قائمة رفع المستوى)
+        public bool InputLocked { get; set; }
+
+        // حدث زر التفاعل (E) — يستهلكه GameLoop للجلوس عند مواقع الراحة
+        public event System.Action InteractPressed;
+
         public PlayerBrain Brain { get; private set; }
         public StaminaPool Stamina { get; private set; }
         public SoulsWallet Wallet { get; private set; }
+        public PlayerProgression Progression { get; private set; }
         public Damageable Damageable { get; private set; }
         public PlayerControls Controls { get; private set; }
 
@@ -36,6 +44,9 @@ namespace SoulsGame.Player
             Stamina.SetSprintCost(stats.sprintStaminaPerSecond);
             Brain = new PlayerBrain(Stamina, weapon, stats);
             Wallet = new SoulsWallet();
+            if (progressionData == null)
+                progressionData = ScriptableObject.CreateInstance<ProgressionData>();
+            Progression = new PlayerProgression(progressionData, stats);
 
             Controls = new PlayerControls();
             Controls.Enable();
@@ -52,6 +63,7 @@ namespace SoulsGame.Player
                 if (weaponHitbox == null) return;
                 float damage = type == AttackType.Heavy ? weapon.heavyDamage : weapon.lightDamage;
                 float poise = type == AttackType.Heavy ? weapon.heavyPoiseDamage : weapon.lightPoiseDamage;
+                damage += Progression.BonusDamage; // إحصائية القوة
                 weaponHitbox.Activate(new DamagePacket(damage, poise, transform.position));
             };
             Brain.HitboxClose += () =>
@@ -75,11 +87,26 @@ namespace SoulsGame.Player
             Damageable.Died += () => Brain.NotifyDied();
         }
 
+        // يطبّق القيم المشتقة من التقدم على المجمّعات (يُستدعى بعد كل رفع مستوى).
+        public void ApplyProgression()
+        {
+            Damageable.Health.SetMax(Progression.MaxHealth);
+            Stamina.SetMax(Progression.MaxStamina);
+        }
+
         private void WireInput()
         {
-            Controls.Dodge.performed += _ => Brain.RequestDodge();
+            Controls.Dodge.performed += _ =>
+            {
+                if (!InputLocked) Brain.RequestDodge();
+            };
+            Controls.Interact.performed += _ =>
+            {
+                if (!InputLocked) InteractPressed?.Invoke();
+            };
             Controls.LightAttack.performed += _ =>
             {
+                if (InputLocked) return;
                 // Shift+زر أيسر = ثقيلة؛ الربط البسيط للزر الأيسر يُطلق أيضاً —
                 // نتجاهله والـ Shift مضغوط حتى لا تخرج ضربتان من ضغطة واحدة
                 var keyboard = Keyboard.current;
@@ -87,19 +114,25 @@ namespace SoulsGame.Player
                     return;
                 Brain.RequestLightAttack();
             };
-            Controls.HeavyAttack.performed += _ => Brain.RequestHeavyAttack();
-            Controls.Block.performed += _ => Brain.SetBlockHeld(true);
+            Controls.HeavyAttack.performed += _ =>
+            {
+                if (!InputLocked) Brain.RequestHeavyAttack();
+            };
+            Controls.Block.performed += _ =>
+            {
+                if (!InputLocked) Brain.SetBlockHeld(true);
+            };
             Controls.Block.canceled += _ => Brain.SetBlockHeld(false);
             Controls.LockOn.performed += _ =>
             {
-                if (lockOn != null) lockOn.Toggle();
+                if (!InputLocked && lockOn != null) lockOn.Toggle();
             };
         }
 
         private void Update()
         {
             float dt = Time.deltaTime;
-            Vector2 move = Controls.Move.ReadValue<Vector2>();
+            Vector2 move = InputLocked ? Vector2.zero : Controls.Move.ReadValue<Vector2>();
 
             bool wantsSprint = Controls.Sprint.IsPressed() && move.sqrMagnitude > 0.01f;
             isSprinting = wantsSprint && Stamina.Current > 0f &&

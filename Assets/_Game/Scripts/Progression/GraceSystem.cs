@@ -19,6 +19,7 @@ namespace SoulsGame.Progression
         private readonly List<Site> sites = new List<Site>();
 
         public Vector3 RespawnPosition { get; private set; }
+        public int SiteCount => sites.Count;
 
         public void AddSite(int id, Vector3 position, bool discovered)
         {
