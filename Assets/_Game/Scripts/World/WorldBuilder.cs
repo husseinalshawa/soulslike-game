@@ -31,8 +31,11 @@ namespace SoulsGame.World
 
         public static void ApplyTheme(WorldTheme theme)
         {
-            var sunGo = new GameObject("Sun");
-            var sun = sunGo.AddComponent<Light>();
+            // يعاد استدعاؤها كل إطار أثناء تحول اللون — الشمس تُعاد استخداماً لا تُنشأ
+            var sunGo = GameObject.Find("Sun");
+            if (sunGo == null) sunGo = new GameObject("Sun");
+            var sun = sunGo.GetComponent<Light>();
+            if (sun == null) sun = sunGo.AddComponent<Light>();
             sun.type = LightType.Directional;
             sun.intensity = theme.sunIntensity;
             sun.color = theme.sunColor;

@@ -67,6 +67,21 @@ namespace SoulsGame.EditorTools
                 w.light = new AttackTimeline(0.6f, 0.3f, 1.2f, 1.2f);
             });
             CreateAssetIfMissing<ProgressionData>("Assets/_Game/Data/Progression.asset", null);
+            // المرتّلون الغارقون (المرحلة 5)
+            CreateAssetIfMissing<CharacterStats>("Assets/_Game/Data/ChanterStats.asset", s =>
+            {
+                s.maxHealth = 200f;
+                s.maxPoise = 40f;
+                s.runSpeed = 2.5f;
+                s.soulsReward = 150;
+            });
+            CreateAssetIfMissing<WeaponData>("Assets/_Game/Data/Chanter_Maul.asset", w =>
+            {
+                w.lightDamage = 30f;
+                w.lightPoiseDamage = 30f;
+                w.lightStaminaCost = 0f;
+                w.light = new AttackTimeline(0.8f, 0.3f, 1.2f, 1.2f);
+            });
             CreateAssetIfMissing<WorldTheme>("Assets/_Game/Data/WorldTheme.asset", null);
             CreateAssetIfMissing<CharacterStats>("Assets/_Game/Data/BossStats.asset", s =>
             {
@@ -104,6 +119,8 @@ namespace SoulsGame.EditorTools
             bootstrap.progressionData = AssetDatabase.LoadAssetAtPath<ProgressionData>("Assets/_Game/Data/Progression.asset");
             bootstrap.bossStats = AssetDatabase.LoadAssetAtPath<CharacterStats>("Assets/_Game/Data/BossStats.asset");
             bootstrap.worldTheme = AssetDatabase.LoadAssetAtPath<WorldTheme>("Assets/_Game/Data/WorldTheme.asset");
+            bootstrap.chanterStats = AssetDatabase.LoadAssetAtPath<CharacterStats>("Assets/_Game/Data/ChanterStats.asset");
+            bootstrap.chanterWeapon = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Chanter_Maul.asset");
             // عتاد المرحلة 4: المشهد يشير للأصول كي يكون تعديلها من الـ Inspector فعالاً
             bootstrap.greatswordData = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Weapon_Greatsword.asset");
             bootstrap.twinDaggersData = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_Game/Data/Weapon_TwinDaggers.asset");

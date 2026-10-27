@@ -196,18 +196,23 @@ namespace SoulsGame.Core
                 }
             }
 
+            ProcessDiscovery();
+        }
+
+        // اكتشاف مواقع الراحة + أعلام القصة التابعة (الكهف 2، الكنيسة 3) —
+        // مفصولة عن Update لتكون قابلة للاختبار في بيئة الشيم.
+        public void ProcessDiscovery()
+        {
             int discovered = Graces.TryDiscover(player.transform.position);
-            if (discovered >= 0)
-            {
-                // أعلام القصة تتبع الاكتشاف: الكهف (2) والكنيسة (3)
-                if (discovered == 2) Story.Set(StoryFlag.CaveDiscovered);
-                if (discovered == 3) Story.Set(StoryFlag.ChapelDiscovered);
-                toast?.Show("Grace discovered");
-                if (graceMarkers != null)
-                    foreach (var marker in graceMarkers)
-                        if (marker != null && marker.siteId == discovered)
-                            marker.SetLit(true);
-            }
+            if (discovered < 0)
+                return;
+            if (discovered == 2) Story.Set(StoryFlag.CaveDiscovered);
+            if (discovered == 3) Story.Set(StoryFlag.ChapelDiscovered);
+            toast?.Show("Grace discovered");
+            if (graceMarkers != null)
+                foreach (var marker in graceMarkers)
+                    if (marker != null && marker.siteId == discovered)
+                        marker.SetLit(true);
         }
 
         private void RefreshStainMarker()
