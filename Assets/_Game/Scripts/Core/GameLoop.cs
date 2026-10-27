@@ -61,6 +61,7 @@ namespace SoulsGame.Core
             Graces.RestAt(siteId);
             player.Damageable.ResetToFull();
             player.Stamina.ResetToFull();
+            player.Focus.ResetToFull();
 
             if (enemies != null)
                 foreach (var enemy in enemies)

@@ -28,5 +28,15 @@ namespace SoulsGame.Progression
             currentIndex = (currentIndex + 1) % items.Count;
             return items[currentIndex];
         }
+
+        // تجهيز قطعة مملوكة مباشرة (الالتقاط يجهز المُلتقط فوراً).
+        public bool Select(T item)
+        {
+            int index = items.IndexOf(item);
+            if (index < 0)
+                return false;
+            currentIndex = index;
+            return true;
+        }
     }
 }

@@ -28,6 +28,14 @@ namespace SoulsGame.UI
             stamina.Bind(() => player.Stamina.Current, () => player.Stamina.Max);
             player.Brain.StaminaRejected += stamina.Flash;
 
+            // بار التركيز (FP) الأزرق
+            var focus = BuildBar(canvasGo.transform, "FocusBar",
+                new Vector2(30f, 22f), new Vector2(190f, 10f), new Color(0.25f, 0.4f, 0.8f));
+            focus.Bind(() => player.Focus.Current, () => player.Focus.Max);
+            player.Brain.FocusRejected += focus.Flash;
+
+            BuildLoadoutLabel(canvasGo.transform, player);
+
             var death = BuildDeathScreen(canvasGo.transform);
             BuildSoulsCounter(canvasGo.transform, player);
             return (health, stamina, death);
@@ -80,23 +88,25 @@ namespace SoulsGame.UI
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = new Vector2(460f, 300f);
+            rect.sizeDelta = new Vector2(460f, 340f);
 
             var menuGo = new GameObject("LevelUpMenuController");
             menuGo.transform.SetParent(parent, false);
             var menu = menuGo.AddComponent<LevelUpMenu>();
             menu.panel = panelImage.gameObject;
 
-            menu.header = MakeLabel(panelImage.transform, new Vector2(0f, 110f), 18);
-            menu.vigorValue = MakeLabel(panelImage.transform, new Vector2(-40f, 55f), 18);
-            menu.vigorButton = MakeButton(panelImage.transform, new Vector2(170f, 55f));
-            menu.enduranceValue = MakeLabel(panelImage.transform, new Vector2(-40f, 10f), 18);
-            menu.enduranceButton = MakeButton(panelImage.transform, new Vector2(170f, 10f));
-            menu.strengthValue = MakeLabel(panelImage.transform, new Vector2(-40f, -35f), 18);
-            menu.strengthButton = MakeButton(panelImage.transform, new Vector2(170f, -35f));
+            menu.header = MakeLabel(panelImage.transform, new Vector2(0f, 130f), 18);
+            menu.vigorValue = MakeLabel(panelImage.transform, new Vector2(-40f, 80f), 18);
+            menu.vigorButton = MakeButton(panelImage.transform, new Vector2(170f, 80f));
+            menu.enduranceValue = MakeLabel(panelImage.transform, new Vector2(-40f, 35f), 18);
+            menu.enduranceButton = MakeButton(panelImage.transform, new Vector2(170f, 35f));
+            menu.strengthValue = MakeLabel(panelImage.transform, new Vector2(-40f, -10f), 18);
+            menu.strengthButton = MakeButton(panelImage.transform, new Vector2(170f, -10f));
+            menu.mindValue = MakeLabel(panelImage.transform, new Vector2(-40f, -55f), 18);
+            menu.mindButton = MakeButton(panelImage.transform, new Vector2(170f, -55f));
 
             // زر «انهض» للإغلاق
-            var rise = MakeButton(panelImage.transform, new Vector2(0f, -110f), 140f, "Rise");
+            var rise = MakeButton(panelImage.transform, new Vector2(0f, -130f), 140f, "Rise");
             rise.onClick.AddListener(menu.Close);
 
             menu.Initialize(player);
@@ -210,6 +220,28 @@ namespace SoulsGame.UI
             labelRect.sizeDelta = new Vector2(width, 36f);
 
             return image.gameObject.AddComponent<Button>();
+        }
+
+        private static void BuildLoadoutLabel(Transform parent, PlayerAvatar player)
+        {
+            var go = new GameObject("Loadout");
+            go.transform.SetParent(parent, false);
+            var text = go.AddComponent<Text>();
+            text.fontSize = 14;
+            text.alignment = TextAnchor.LowerLeft;
+            text.color = new Color(0.75f, 0.72f, 0.6f);
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.zero;
+            rect.pivot = Vector2.zero;
+            rect.anchoredPosition = new Vector2(30f, 94f);
+            rect.sizeDelta = new Vector2(420f, 20f);
+
+            var label = go.AddComponent<LoadoutLabel>();
+            label.label = text;
+            label.Bind(() =>
+                $"{player.Weapons.Current?.weaponName}  |  {player.Spells.Current?.spellName}  |  {player.Armors.Current?.armorName}");
         }
 
         private static void BuildSoulsCounter(Transform parent, PlayerAvatar player)

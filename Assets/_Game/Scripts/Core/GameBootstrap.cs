@@ -35,12 +35,13 @@ namespace SoulsGame.Core
         public BossAvatar Boss { get; private set; }
         public HorseAvatar Horse { get; private set; }
         public SoulsCache Cache { get; private set; }
+        public GearPickup[] Pickups { get; private set; }
         public GameLoop Loop { get; private set; }
 
         private void Awake()
         {
             if (playerStats == null) playerStats = ScriptableObject.CreateInstance<CharacterStats>();
-            if (playerWeapon == null) playerWeapon = ScriptableObject.CreateInstance<WeaponData>();
+            if (playerWeapon == null) playerWeapon = GearLibrary.Longsword(); // بالاسم والمهارة
             if (enemyStats == null)
             {
                 enemyStats = ScriptableObject.CreateInstance<CharacterStats>();
@@ -104,6 +105,48 @@ namespace SoulsGame.Core
             BuildBossArea(fy);
             BuildSoulsCache();
             BuildHorse();
+            BuildGearPickups();
+        }
+
+        private void BuildGearPickups()
+        {
+            float fy = WorldHeightmap.FortPlateauHeight;
+            Vector3 caveRoom = WorldBuilder.CaveRoomCenter;
+            float caveFloorY = WorldHeightmap.GetHeight(
+                WorldHeightmap.CaveMouthCenter.x, WorldHeightmap.CaveMouthCenter.z);
+
+            // الترتيب مثبت: [0] السيف العظيم (يعتمده اختبار دورة الحياة)
+            Pickups = new[]
+            {
+                BuildGearPickup(GearLibrary.Greatsword(), null, new Vector3(2f, fy + 0.6f, 35f)),
+                BuildGearPickup(null, GearLibrary.Plate(), new Vector3(-2f, fy + 0.6f, 35f)),
+                BuildGearPickup(GearLibrary.TwinDaggers(), null,
+                    new Vector3(caveRoom.x + 3f, caveFloorY + 0.6f, caveRoom.z + 3f)),
+                BuildGearPickup(GearLibrary.Spear(), null,
+                    WorldBuilder.OnGround(Camp1Center.x, Camp1Center.z + 3f, 0.6f)),
+                BuildGearPickup(GearLibrary.Warhammer(), null,
+                    WorldBuilder.OnGround(Camp2Center.x, Camp2Center.z + 3f, 0.6f)),
+                BuildGearPickup(null, GearLibrary.Leather(),
+                    WorldBuilder.OnGround(6f, -95f, 0.6f))
+            };
+        }
+
+        private GearPickup BuildGearPickup(WeaponData weaponData, ArmorData armorData, Vector3 position)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = weaponData != null ? $"Pickup_{weaponData.weaponName}" : $"Pickup_{armorData.armorName}";
+            go.transform.position = position;
+            go.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+            Tint(go, weaponData != null ? new Color(0.85f, 0.75f, 0.4f) : new Color(0.6f, 0.65f, 0.8f));
+            var pickupCollider = go.GetComponent<Collider>();
+            if (pickupCollider != null) pickupCollider.enabled = false;
+
+            var pickup = go.AddComponent<GearPickup>();
+            pickup.weapon = weaponData;
+            pickup.armor = armorData;
+            pickup.player = Player;
+            pickup.toast = Loop != null ? Loop.toast : null;
+            return pickup;
         }
 
         private void BuildHorse()

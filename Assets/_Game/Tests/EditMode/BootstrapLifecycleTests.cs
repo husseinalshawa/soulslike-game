@@ -120,6 +120,30 @@ namespace SoulsGame.Tests
         }
 
         [Test]
+        public void Gear_PickupsAndSwitching()
+        {
+            var go = new GameObject("Bootstrap");
+            var bootstrap = go.AddComponent<GameBootstrap>();
+            var player = bootstrap.Player;
+
+            Assert.AreEqual(1, player.Weapons.Count, "يبدأ بالسيف الطويل فقط");
+            Assert.AreEqual(1, player.Armors.Count, "يبدأ بقماش الجوّال");
+            Assert.AreEqual(2, player.Spells.Count, "التعويذتان منذ البداية");
+            Assert.AreEqual(60f, player.Focus.Max);
+            Assert.AreEqual(6, bootstrap.Pickups.Length, "أربعة أسلحة ودرعان في العالم");
+
+            // التقاط السيف العظيم من موضعه
+            var greatswordPickup = bootstrap.Pickups[0];
+            Assert.AreEqual(1, greatswordPickup.TryCollect(greatswordPickup.transform.position),
+                "الالتقاط ضمن النطاق");
+            Assert.AreEqual(0, greatswordPickup.TryCollect(greatswordPickup.transform.position),
+                "مرة واحدة");
+            Assert.AreEqual(2, player.Weapons.Count);
+            Assert.AreEqual("Greatsword", player.Weapons.Current.weaponName, "المُلتقط يتجهز");
+            Assert.AreSame(player.Weapons.Current, player.Brain.CurrentWeapon, "العقل تبعه");
+        }
+
+        [Test]
         public void Horse_SummonRideAndForcedDismount()
         {
             var go = new GameObject("Bootstrap");

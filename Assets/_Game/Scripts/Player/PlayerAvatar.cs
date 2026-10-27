@@ -28,12 +28,25 @@ namespace SoulsGame.Player
         // حدث زر التفاعل (E) — يستهلكه GameLoop للجلوس عند مواقع الراحة
         public event System.Action InteractPressed;
 
+        // تغيّر العتاد المجهز — يستهلكه سطر العتاد في الواجهة
+        public event System.Action GearChanged;
+
         public PlayerBrain Brain { get; private set; }
         public StaminaPool Stamina { get; private set; }
         public SoulsWallet Wallet { get; private set; }
         public PlayerProgression Progression { get; private set; }
         public MountSystem Mount { get; private set; }
         public bool IsRiding => Mount != null && Mount.IsMounted;
+
+        public GearInventory<WeaponData> Weapons { get; } = new GearInventory<WeaponData>();
+        public GearInventory<ArmorData> Armors { get; } = new GearInventory<ArmorData>();
+        public GearInventory<SpellData> Spells { get; } = new GearInventory<SpellData>();
+        public FocusPool Focus { get; private set; }
+        public WeaponBuff Buff { get; } = new WeaponBuff();
+
+        public ArmorData defaultArmor;
+        public SpellData spellBolt;
+        public SpellData spellBuff;
         public Damageable Damageable { get; private set; }
         public PlayerControls Controls { get; private set; }
 
@@ -48,12 +61,22 @@ namespace SoulsGame.Player
             Stamina = new StaminaPool(stats.maxStamina, stats.staminaRegenPerSecond,
                 stats.staminaRegenDelay, stats.blockingRegenMultiplier);
             Stamina.SetSprintCost(stats.sprintStaminaPerSecond);
-            Brain = new PlayerBrain(Stamina, weapon, stats);
             Wallet = new SoulsWallet();
             if (progressionData == null)
                 progressionData = ScriptableObject.CreateInstance<ProgressionData>();
             Progression = new PlayerProgression(progressionData, stats);
             Mount = new MountSystem();
+            Focus = new FocusPool(Progression.MaxFocus);
+
+            Weapons.Add(weapon);
+            if (defaultArmor == null) defaultArmor = GearLibrary.Cloth();
+            Armors.Add(defaultArmor);
+            if (spellBolt == null) spellBolt = GearLibrary.GlintBolt();
+            if (spellBuff == null) spellBuff = GearLibrary.WeaponBuffSpell();
+            Spells.Add(spellBolt);
+            Spells.Add(spellBuff);
+
+            Brain = new PlayerBrain(Stamina, weapon, stats, Focus);
 
             Controls = new PlayerControls();
             Controls.Enable();
@@ -61,6 +84,49 @@ namespace SoulsGame.Player
             WireBrainEvents();
             WireDamageEvents();
             WireInput();
+            EquipCurrentWeapon();
+            EquipCurrentArmor();
+        }
+
+        // الالتقاط يضيف ويجهز فوراً
+        public void AcquireWeapon(WeaponData newWeapon)
+        {
+            Weapons.Add(newWeapon);
+            Weapons.Select(newWeapon);
+            EquipCurrentWeapon();
+        }
+
+        public void AcquireArmor(ArmorData newArmor)
+        {
+            Armors.Add(newArmor);
+            Armors.Select(newArmor);
+            EquipCurrentArmor();
+        }
+
+        public void EquipCurrentWeapon()
+        {
+            var w = Weapons.Current;
+            if (w == null) return;
+            Brain.SetWeapon(w);
+            if (weaponHitbox != null)
+            {
+                // شكل السلاح والـ hitbox يتبعان بيانات السلاح
+                weaponHitbox.transform.localScale = new Vector3(w.hitboxWidth, w.hitboxWidth, w.reach);
+                weaponHitbox.transform.localPosition = new Vector3(0f, 0.2f, 0.2f + w.reach * 0.5f);
+            }
+        }
+
+        public void EquipCurrentArmor()
+        {
+            var a = Armors.Current;
+            if (a == null) return;
+            Damageable.DamageTransform = packet => new DamagePacket(
+                packet.HealthDamage * (1f - a.damageReduction), packet.PoiseDamage, packet.SourcePosition);
+            Brain.SetDodgeProfile(a.dodgeDurationMultiplier);
+            motor.DodgeDistanceMultiplier = a.dodgeDistanceMultiplier;
+            motor.DodgeDurationMultiplier = a.dodgeDurationMultiplier;
+            var renderer = GetComponent<Renderer>();
+            if (renderer != null) renderer.material.color = a.tint;
         }
 
         private void WireBrainEvents()
@@ -145,6 +211,7 @@ namespace SoulsGame.Player
         {
             Damageable.Health.SetMax(Progression.MaxHealth);
             Stamina.SetMax(Progression.MaxStamina);
+            Focus.SetMax(Progression.MaxFocus);
         }
 
         private void WireInput()
@@ -162,6 +229,44 @@ namespace SoulsGame.Player
             Controls.Mount.performed += _ =>
             {
                 if (!InputLocked) TrySummonHorse();
+            };
+            Controls.SwitchWeapon.performed += _ =>
+            {
+                if (InputLocked || IsRiding) return;
+                var before = Weapons.Current;
+                var next = Weapons.Cycle();
+                if (!ReferenceEquals(before, next))
+                {
+                    EquipCurrentWeapon();
+                    GearChanged?.Invoke();
+                }
+            };
+            Controls.SwitchArmor.performed += _ =>
+            {
+                if (InputLocked || IsRiding) return;
+                if (Brain.CurrentState != PlayerStateId.Locomotion && Brain.CurrentState != PlayerStateId.Block)
+                    return;
+                var before = Armors.Current;
+                var next = Armors.Cycle();
+                if (!ReferenceEquals(before, next))
+                {
+                    EquipCurrentArmor();
+                    GearChanged?.Invoke();
+                }
+            };
+            Controls.SwitchSpell.performed += _ =>
+            {
+                if (InputLocked || IsRiding) return;
+                Spells.Cycle();
+                GearChanged?.Invoke();
+            };
+            Controls.CastSpell.performed += _ =>
+            {
+                if (!InputLocked && !IsRiding) Brain.RequestCast(Spells.Current);
+            };
+            Controls.WeaponSkill.performed += _ =>
+            {
+                if (!InputLocked && !IsRiding) Brain.RequestSkill();
             };
             // يعمل حتى أثناء قفل الإدخال — إغلاق القائمة يمر من هنا
             Controls.Interact.performed += _ => InteractPressed?.Invoke();
@@ -200,6 +305,8 @@ namespace SoulsGame.Player
                           Brain.CurrentState == PlayerStateId.Locomotion;
 
             Stamina.Tick(dt, Brain.IsBlocking, isSprinting);
+            Focus.Tick(dt);
+            Buff.Tick(dt);
             Brain.Tick(dt);
 
             if (IsRiding && horse != null)

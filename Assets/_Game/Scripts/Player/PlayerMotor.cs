@@ -26,6 +26,10 @@ namespace SoulsGame.Player
         // أثناء الركوب: الحصان هو من يتحرك — المحرك متجمد تماماً
         public bool Frozen { get; set; }
 
+        // ملف تفادي الدرع: المسافة والمدة تُضربان بمضاعفي الدرع المجهز
+        public float DodgeDistanceMultiplier { get; set; } = 1f;
+        public float DodgeDurationMultiplier { get; set; } = 1f;
+
         private CharacterController controller;
         private Vector3 dodgeDirection;
         private float verticalVelocity;
@@ -73,7 +77,8 @@ namespace SoulsGame.Player
                     break;
                 }
                 case PlayerStateId.Dodge:
-                    planar = dodgeDirection * (DodgeDistance / PlayerBrain.DodgeDuration);
+                    planar = dodgeDirection * (DodgeDistance * DodgeDistanceMultiplier
+                        / (PlayerBrain.DodgeDuration * DodgeDurationMultiplier));
                     break;
                 // Attack/Stagger/Death: لا حركة أفقية — الالتزام بالحركة
             }
