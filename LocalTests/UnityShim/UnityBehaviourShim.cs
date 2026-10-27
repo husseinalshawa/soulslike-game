@@ -13,6 +13,7 @@ namespace UnityEngine
         public static Quaternion LookRotation(Vector3 forward) => default;
         public static Quaternion LookRotation(Vector3 forward, Vector3 up) => default;
         public static Quaternion Slerp(Quaternion a, Quaternion b, float t) => default;
+        public static Quaternion RotateTowards(Quaternion from, Quaternion to, float maxDegreesDelta) => default;
         public static Vector3 operator *(Quaternion q, Vector3 v) => v;
         public static Quaternion operator *(Quaternion a, Quaternion b) => default;
     }

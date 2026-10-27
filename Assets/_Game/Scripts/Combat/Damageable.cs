@@ -15,6 +15,9 @@ namespace SoulsGame.Combat
         // تُفعَّل أثناء i-frames التفادي: الضرر يُتجاهل بالكامل.
         public bool IsInvulnerable { get; set; }
 
+        // اعتراض قبل تطبيق الضرر (الصد): إن أعاد true فالضربة امتُصت بالكامل.
+        public Func<DamagePacket, bool> DamageInterceptor { get; set; }
+
         public event Action<DamagePacket> Damaged;
         public event Action PoiseBroken;
         public event Action Died;
@@ -34,6 +37,9 @@ namespace SoulsGame.Combat
         public void ApplyDamage(DamagePacket packet)
         {
             if (IsInvulnerable || Health.IsDead)
+                return;
+
+            if (DamageInterceptor != null && DamageInterceptor(packet))
                 return;
 
             Health.TakeDamage(packet.HealthDamage);

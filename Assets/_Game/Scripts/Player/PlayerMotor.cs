@@ -1,0 +1,101 @@
+using SoulsGame.Data;
+using UnityEngine;
+
+namespace SoulsGame.Player
+{
+    // حركة اللاعب: نسبية للكاميرا، مع اندفاع التفادي والتجمد أثناء الالتزام
+    // بالهجوم/الترنح/الموت. PlayerAvatar يغذيه بالإدخال والحالة كل إطار.
+    [RequireComponent(typeof(CharacterController))]
+    public class PlayerMotor : MonoBehaviour
+    {
+        public const float DodgeDistance = 3.5f;
+        private const float RotationSpeedDegrees = 720f;
+        private const float Gravity = -20f;
+
+        public CharacterStats stats;
+        public Transform cameraTransform;
+
+        // يغذيها PlayerAvatar كل إطار
+        public Vector2 MoveInput { get; set; }
+        public bool SprintActive { get; set; }
+        public PlayerStateId State { get; set; } = PlayerStateId.Locomotion;
+
+        // هدف القفل: عند وجوده يتحول اللاعب لوضع strafe (يواجه الهدف) — المهمة 8
+        public Transform StrafeTarget { get; set; }
+
+        private CharacterController controller;
+        private Vector3 dodgeDirection;
+        private float verticalVelocity;
+
+        public Vector3 LastPlanarDirection { get; private set; } = Vector3.forward;
+
+        private void Awake()
+        {
+            controller = GetComponent<CharacterController>();
+        }
+
+        public void BeginDodge()
+        {
+            // اتجاه التفادي: اتجاه الإدخال الحالي، وإلا للخلف (مثل السولز)
+            Vector3 input = WorldMoveDirection();
+            dodgeDirection = input.sqrMagnitude > 0.01f ? input.normalized : transform.forward * -1f;
+        }
+
+        private void Update()
+        {
+            float dt = Time.deltaTime;
+            Vector3 planar = Vector3.zero;
+
+            switch (State)
+            {
+                case PlayerStateId.Locomotion:
+                case PlayerStateId.Block:
+                {
+                    Vector3 moveDir = WorldMoveDirection();
+                    float speed = State == PlayerStateId.Block ? stats.walkSpeed
+                        : SprintActive ? stats.sprintSpeed
+                        : stats.runSpeed;
+                    planar = moveDir * speed;
+
+                    if (StrafeTarget != null)
+                        FaceTowards(StrafeTarget.position - transform.position, dt);
+                    else if (moveDir.sqrMagnitude > 0.01f)
+                        FaceTowards(moveDir, dt);
+
+                    if (moveDir.sqrMagnitude > 0.01f)
+                        LastPlanarDirection = moveDir.normalized;
+                    break;
+                }
+                case PlayerStateId.Dodge:
+                    planar = dodgeDirection * (DodgeDistance / PlayerBrain.DodgeDuration);
+                    break;
+                // Attack/Stagger/Death: لا حركة أفقية — الالتزام بالحركة
+            }
+
+            verticalVelocity = controller.isGrounded ? -1f : verticalVelocity + Gravity * dt;
+            Vector3 velocity = planar + Vector3.up * verticalVelocity;
+            controller.Move(velocity * dt);
+        }
+
+        private Vector3 WorldMoveDirection()
+        {
+            if (MoveInput.sqrMagnitude < 0.01f)
+                return Vector3.zero;
+
+            Vector3 forward = cameraTransform != null ? cameraTransform.forward : Vector3.forward;
+            Vector3 right = cameraTransform != null ? cameraTransform.right : Vector3.right;
+            forward.y = 0f; right.y = 0f;
+            Vector3 dir = forward.normalized * MoveInput.y + right.normalized * MoveInput.x;
+            return dir.sqrMagnitude > 1f ? dir.normalized : dir;
+        }
+
+        private void FaceTowards(Vector3 direction, float dt)
+        {
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f)
+                return;
+            Quaternion target = Quaternion.LookRotation(direction.normalized, Vector3.up);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, target, RotationSpeedDegrees * dt);
+        }
+    }
+}

@@ -50,6 +50,9 @@ namespace UnityEngine
     public class Object
     {
         public string name;
+        public static void Destroy(Object obj) { }
+        public static void Destroy(Object obj, float delay) { }
+        public static void DontDestroyOnLoad(Object obj) { }
     }
 
     public class ScriptableObject : Object
