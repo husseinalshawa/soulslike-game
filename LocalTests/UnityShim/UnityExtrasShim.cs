@@ -58,6 +58,8 @@ namespace UnityEngine
     public class Renderer : Component
     {
         public Material material = new Material();
+        // في الشيم المادة المشتركة والنسخة شيء واحد
+        public Material sharedMaterial { get => material; set => material = value; }
         public bool enabled;
     }
 

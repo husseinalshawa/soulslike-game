@@ -25,3 +25,9 @@ LocalTests/obj/
 
 # SDD scratch workspace
 .superpowers/
+
+# Unity Version Control (Plastic) workspace metadata
+.plastic/
+ignore.conf
+*.slnx
+

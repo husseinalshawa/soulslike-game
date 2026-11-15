@@ -23,7 +23,7 @@ namespace SoulsGame.Tests
             Assert.IsNotNull(number.label.font, "خط مسند — وإلا الرقم غير مرئي");
             var renderer = number.GetComponent<MeshRenderer>();
             Assert.IsNotNull(renderer);
-            Assert.AreSame(number.label.font.material, renderer.material,
+            Assert.AreSame(number.label.font.material, renderer.sharedMaterial,
                 "مادة الخط على الـ renderer — شرط ظهور TextMesh");
         }
 

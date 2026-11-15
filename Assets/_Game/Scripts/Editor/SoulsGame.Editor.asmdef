@@ -2,7 +2,9 @@
     "name": "SoulsGame.Editor",
     "rootNamespace": "SoulsGame.EditorTools",
     "references": [
-        "SoulsGame"
+        "SoulsGame",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
     ],
     "includePlatforms": [
         "Editor"

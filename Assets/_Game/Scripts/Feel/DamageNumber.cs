@@ -43,7 +43,8 @@ namespace SoulsGame.Feel
                 var meshRenderer = go.GetComponent<MeshRenderer>();
                 if (meshRenderer == null)
                     meshRenderer = go.AddComponent<MeshRenderer>();
-                meshRenderer.material = font.material;
+                // sharedMaterial: مادة الخط نفسها بلا نسخة جديدة لكل رقم (لا تسريب مواد)
+                meshRenderer.sharedMaterial = font.material;
             }
             var number = go.AddComponent<DamageNumber>();
             number.label = text;

@@ -18,6 +18,8 @@
     <Compile Include="UnityShim/**/*.cs" />
     <Compile Include="../Assets/_Game/Scripts/**/*.cs" Exclude="../Assets/_Game/Scripts/Editor/**/*.cs" />
     <Compile Include="../Assets/_Game/Tests/EditMode/**/*.cs" />
+    <!-- اختبارات التكامل انتقلت إلى PlayMode في Unity (تحتاج Awake الحقيقي)؛ الشيم يشغّلها كما هي -->
+    <Compile Include="../Assets/_Game/Tests/PlayMode/**/*.cs" Exclude="../Assets/_Game/Tests/PlayMode/SceneCleanup.cs" />
   </ItemGroup>
 
   <ItemGroup>
