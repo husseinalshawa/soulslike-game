@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0febcb86f8482b4dbb9dd629f877617, type: 3}
+  m_Name: Progression
+  m_EditorClassIdentifier: SoulsGame::SoulsGame.Data.ProgressionData
+  baseStatValue: 10
+  vigorHpPerPoint: 12
+  enduranceStaminaPerPoint: 6
+  strengthDamagePerPoint: 2
+  mindFocusPerPoint: 5
+  baseFocus: 60
+  baseCost: 100
+  costIncrement: 25

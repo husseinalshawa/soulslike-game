@@ -14,7 +14,10 @@ namespace SoulsGame.EditorTools
         [MenuItem("Tools/SoulsGame/0 - Setup URP")]
         public static void SetupUrp()
         {
-            if (GraphicsSettings.defaultRenderPipeline is UniversalRenderPipelineAsset)
+            // Unity 6 يضع أصل URP غالباً على مستوى الجودة لا في الإعداد الافتراضي —
+            // currentRenderPipeline يرى الاثنين، فلا ننشئ أصلاً مكرراً فوق إعداد المشروع
+            if (GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset
+                || GraphicsSettings.defaultRenderPipeline is UniversalRenderPipelineAsset)
             {
                 Debug.Log("SoulsGame: URP already active.");
                 return;

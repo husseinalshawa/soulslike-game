@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e5f227c76f09f0459ea20d700ccf852, type: 3}
+  m_Name: Sword_Basic
+  m_EditorClassIdentifier: SoulsGame::SoulsGame.Data.WeaponData
+  weaponName: Longsword
+  reach: 1.6
+  hitboxWidth: 0.25
+  skill:
+    skillName: Piercing Dash
+    fpCost: 15
+    timeline:
+      windup: 0.3
+      active: 0.25
+      recovery: 0.55
+      cancelWindowStart: 0.8
+    damage: 40
+    poiseDamage: 30
+    dashDistance: 4
+    radius: 0
+    hitCount: 1
+  lightDamage: 25
+  lightPoiseDamage: 15
+  lightStaminaCost: 15
+  light:
+    windup: 0.25
+    active: 0.2
+    recovery: 0.45
+    cancelWindowStart: 0.55
+  heavyDamage: 50
+  heavyPoiseDamage: 35
+  heavyStaminaCost: 30
+  heavy:
+    windup: 0.6
+    active: 0.25
+    recovery: 0.8
+    cancelWindowStart: 1
+  comboLength: 3

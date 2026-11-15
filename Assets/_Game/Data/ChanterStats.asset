@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a9ae12b9d2ab5c409c384293b8020f8, type: 3}
+  m_Name: ChanterStats
+  m_EditorClassIdentifier: SoulsGame::SoulsGame.Data.CharacterStats
+  maxHealth: 200
+  maxStamina: 100
+  maxPoise: 40
+  poiseRegenPerSecond: 10
+  staminaRegenPerSecond: 25
+  staminaRegenDelay: 0.5
+  blockingRegenMultiplier: 0.33
+  walkSpeed: 2
+  runSpeed: 2.5
+  sprintSpeed: 8
+  sprintStaminaPerSecond: 10
+  dodgeStaminaCost: 20
+  soulsReward: 150
