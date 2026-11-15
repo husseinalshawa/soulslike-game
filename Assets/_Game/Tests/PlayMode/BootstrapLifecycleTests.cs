@@ -102,8 +102,8 @@ namespace SoulsGame.Tests
 
             Assert.AreEqual(4, bootstrap.Loop.Graces.SiteCount,
                 "أربعة مواقع: بوابة الحصن، منتصف المرج، فم الكهف، الكنيسة");
-            Assert.AreEqual(11, bootstrap.AllEnemies.Length,
-                "11: 2 حصن + 2×2 معسكران + 2 كهف + 3 مرتّلون");
+            Assert.AreEqual(14, bootstrap.AllEnemies.Length,
+                "14: 2 حصن + 2×2 معسكران + 2 كهف + 3 مرتّلون + 3 نخبة الغابة");
 
             // كل مواقع الراحة مواضع إحياء فوق الأرض لا داخلها (مركز اللاعب +1.1)
             for (int i = 0; i < 4; i++)

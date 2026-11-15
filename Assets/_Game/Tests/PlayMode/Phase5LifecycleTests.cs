@@ -17,7 +17,7 @@ namespace SoulsGame.Tests
             var loop = bootstrap.Loop;
 
             Assert.AreEqual(4, loop.Graces.SiteCount, "موقع الكنيسة هو الرابع");
-            Assert.AreEqual(11, bootstrap.AllEnemies.Length, "8 + 3 مرتّلين غارقين");
+            Assert.AreEqual(14, bootstrap.AllEnemies.Length, "8 + 3 مرتّلين غارقين + 3 نخبة الغابة المظلمة");
             Assert.AreEqual(3, loop.npcs.Length, "مارا وفاليون وسيلا");
             foreach (var npc in loop.npcs)
             {
@@ -31,7 +31,10 @@ namespace SoulsGame.Tests
 
             // المرتّلون: إحصاءات الغارقين لا الجنود
             var chanter = bootstrap.AllEnemies[8];
-            Assert.AreEqual(200f, chanter.Damageable.Health.Max, "صحة المرتّل 200");
+            // صحة المرتّل الأساسية 200 × مضاعف المستوى 3 (الكنيسة منطقة متقدمة)
+            Assert.AreEqual(3, chanter.tier, "الكنيسة الغارقة من المستوى 3");
+            Assert.AreEqual(200f * Enemies.EnemyLevels.HealthMultiplier(3),
+                chanter.Damageable.Health.Max, 0.01f, "صحة المرتّل = 200 مضخّمة بالمستوى");
         }
 
         [Test]

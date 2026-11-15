@@ -83,14 +83,25 @@ namespace SoulsGame.Tests
         public void EconomyTable_PinnedFromCodeConstants()
         {
             var bootstrap = Build();
+            // الوحوش مضخّمة بمستوى منطقتها — المجموع من إحصاءات كل وحش فعلياً
+            int enemySouls = 0;
+            foreach (var enemy in bootstrap.AllEnemies)
+                enemySouls += enemy.stats.soulsReward;
+            Assert.AreEqual(
+                2 * 100 +                                   // الحصن L1
+                4 * EnemyLevelsSouls(100, 2) +              // المعسكر الشرقي + الكهف L2
+                2 * EnemyLevelsSouls(100, 3) +              // المعسكر الجنوبي L3
+                3 * EnemyLevelsSouls(150, 3) +              // المرتّلون L3
+                3 * EnemyLevelsSouls(100, 4),               // نخبة الغابة المظلمة L4
+                enemySouls, "أرواح الوحوش حسب مستوياتها");
+
             int total =
-                8 * bootstrap.enemyStats.soulsReward +
-                3 * bootstrap.chanterStats.soulsReward +
+                enemySouls +
                 bootstrap.Cache.amount +
                 Story.StoryLibrary.BellReward +
                 bootstrap.bossStats.soulsReward +
                 GameLoop.AltarReward;
-            Assert.AreEqual(7550, total, "مجموع الأرواح المتاحة في مسار واحد");
+            Assert.AreEqual(11070, total, "مجموع الأرواح المتاحة في مسار واحد (مع المستويات)");
 
             var data = ScriptableObject.CreateInstance<Data.ProgressionData>(); // الافتراضيات المثبتة
             int cumulative = 0, affordable = 0;
@@ -99,7 +110,10 @@ namespace SoulsGame.Tests
                 cumulative += data.baseCost + data.costIncrement * (level - 1);
                 if (cumulative <= total) affordable = level;
             }
-            Assert.AreEqual(21, affordable, "المسار الكامل يوصلك حوالي مستوى 21");
+            Assert.AreEqual(26, affordable, "المسار الكامل يوصلك حوالي مستوى 26 — الوحوش الأقوى تكافئ أكثر");
         }
+
+        private static int EnemyLevelsSouls(int baseSouls, int tier) =>
+            Enemies.EnemyLevels.ScaleSouls(baseSouls, tier);
     }
 }

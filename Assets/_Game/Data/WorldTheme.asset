@@ -12,17 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5678fd68b29da74bb8d5531fb71f56d, type: 3}
   m_Name: WorldTheme
   m_EditorClassIdentifier: SoulsGame::SoulsGame.Data.WorldTheme
-  sunColor: {r: 1, g: 0.85, b: 0.6, a: 1}
-  sunIntensity: 0.9
-  sunPitchDegrees: 18
-  sunYawDegrees: -60
-  fogColor: {r: 0.75, g: 0.68, b: 0.55, a: 1}
-  fogDensity: 0.008
-  ambient: {r: 0.45, g: 0.42, b: 0.38, a: 1}
-  skyColor: {r: 0.82, g: 0.72, b: 0.58, a: 1}
-  grassColor: {r: 0.45, g: 0.42, b: 0.25, a: 1}
-  highGroundColor: {r: 0.55, g: 0.5, b: 0.42, a: 1}
-  rockColor: {r: 0.4, g: 0.38, b: 0.34, a: 1}
-  deadTreeColor: {r: 0.3, g: 0.25, b: 0.2, a: 1}
-  ruinColor: {r: 0.42, g: 0.4, b: 0.36, a: 1}
-  caveColor: {r: 0.16, g: 0.15, b: 0.14, a: 1}
+  sunColor: {r: 0.55, g: 0.62, b: 0.85, a: 1}
+  sunIntensity: 0.45
+  sunPitchDegrees: 35
+  sunYawDegrees: -40
+  fogColor: {r: 0.07, g: 0.08, b: 0.1, a: 1}
+  fogDensity: 0.022
+  ambient: {r: 0.12, g: 0.13, b: 0.17, a: 1}
+  skyColor: {r: 0.04, g: 0.05, b: 0.07, a: 1}
+  grassColor: {r: 0.17, g: 0.19, b: 0.12, a: 1}
+  highGroundColor: {r: 0.23, g: 0.22, b: 0.19, a: 1}
+  rockColor: {r: 0.21, g: 0.21, b: 0.22, a: 1}
+  deadTreeColor: {r: 0.13, g: 0.11, b: 0.1, a: 1}
+  ruinColor: {r: 0.24, g: 0.23, b: 0.22, a: 1}
+  caveColor: {r: 0.06, g: 0.06, b: 0.06, a: 1}

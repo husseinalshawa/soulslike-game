@@ -25,6 +25,7 @@ namespace SoulsGame.Enemies
         public Transform player;
         public Vector3 patrolA;
         public Vector3 patrolB;
+        public int tier = EnemyLevels.MinTier; // مستوى المنطقة (EnemyLevels) — 1 = الحصن
         public Color baseTint = new Color(0.6f, 0.2f, 0.2f); // لون النوع (جندي/مرتّل)
 
         public EnemyBrain Brain { get; private set; }

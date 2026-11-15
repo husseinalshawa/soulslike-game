@@ -144,16 +144,20 @@ namespace SoulsGame.Core
                 WorldBuilder.OnGround(-7f, 11f, 1.1f), WorldBuilder.OnGround(-1f, 11f, 1.1f));
 
             // المعسكران (جنديان لكل معسكر حول نار مخيم) وعدوا الكهف
-            var camp1 = BuildCamp(Camp1Center);
-            var camp2 = BuildCamp(Camp2Center);
+            // مستويات الوحوش (EnemyLevels): كلما ابتعدت عن الحصن اشتدت
+            var camp1 = BuildCamp(Camp1Center, 2);
+            var camp2 = BuildCamp(Camp2Center, 3);
             var caveEnemies = BuildCaveEnemies();
             var chanters = BuildChanters();
+            var forestElites = BuildForestElites();
             AllEnemies = new[]
             {
                 Enemy, Enemy2,
                 camp1[0], camp1[1], camp2[0], camp2[1],
                 caveEnemies[0], caveEnemies[1],
-                chanters[0], chanters[1], chanters[2]
+                chanters[0], chanters[1], chanters[2],
+                // الغابة المظلمة: نخبة المستوى 4 — بعد الفهارس الثابتة 0..10
+                forestElites[0], forestElites[1], forestElites[2]
             };
 
             BuildHudAndGameLoop();
@@ -358,13 +362,13 @@ namespace SoulsGame.Core
             {
                 BuildEnemy(WorldBuilder.OnGround(112f, 70f, 1.4f),
                     WorldBuilder.OnGround(110f, 68f, 1.4f), WorldBuilder.OnGround(114f, 72f, 1.4f),
-                    chanterStats, chanterWeapon, tint),
+                    chanterStats, chanterWeapon, tint, tier: 3),
                 BuildEnemy(WorldBuilder.OnGround(128f, 72f, 1.4f),
                     WorldBuilder.OnGround(126f, 70f, 1.4f), WorldBuilder.OnGround(130f, 74f, 1.4f),
-                    chanterStats, chanterWeapon, tint),
+                    chanterStats, chanterWeapon, tint, tier: 3),
                 BuildEnemy(WorldBuilder.OnGround(120f, 94f, 1.4f),
                     WorldBuilder.OnGround(118f, 93f, 1.4f), WorldBuilder.OnGround(122f, 95f, 1.4f),
-                    chanterStats, chanterWeapon, tint)
+                    chanterStats, chanterWeapon, tint, tier: 3)
             };
         }
 
@@ -446,7 +450,7 @@ namespace SoulsGame.Core
             go.SetActive(true); // يجري Awake (الذي يخفيه فوراً حتى الاستدعاء)
         }
 
-        private EnemyAvatar[] BuildCamp(Vector3 center)
+        private EnemyAvatar[] BuildCamp(Vector3 center, int tier = EnemyLevels.MinTier)
         {
             // نار المخيم: صندوق متوهج يحدد الموقع من بعيد
             var fire = CreateBox("Campfire", WorldBuilder.OnGround(center.x, center.z, 0.3f),
@@ -458,10 +462,10 @@ namespace SoulsGame.Core
             {
                 BuildEnemy(WorldBuilder.OnGround(center.x - 3f, center.z, 1.1f),
                     WorldBuilder.OnGround(center.x - 5f, center.z - 2f, 1.1f),
-                    WorldBuilder.OnGround(center.x - 1f, center.z + 2f, 1.1f)),
+                    WorldBuilder.OnGround(center.x - 1f, center.z + 2f, 1.1f), tier: tier),
                 BuildEnemy(WorldBuilder.OnGround(center.x + 3f, center.z, 1.1f),
                     WorldBuilder.OnGround(center.x + 5f, center.z + 2f, 1.1f),
-                    WorldBuilder.OnGround(center.x + 1f, center.z - 2f, 1.1f))
+                    WorldBuilder.OnGround(center.x + 1f, center.z - 2f, 1.1f), tier: tier)
             };
         }
 
@@ -473,10 +477,37 @@ namespace SoulsGame.Core
             return new[]
             {
                 BuildEnemy(new Vector3(room.x - 2f, floorY + 1.1f, room.z + 2f),
-                    new Vector3(room.x - 4f, floorY + 1.1f, room.z), new Vector3(room.x, floorY + 1.1f, room.z + 4f)),
+                    new Vector3(room.x - 4f, floorY + 1.1f, room.z), new Vector3(room.x, floorY + 1.1f, room.z + 4f),
+                    tier: 2),
                 BuildEnemy(new Vector3(room.x + 2f, floorY + 1.1f, room.z - 2f),
-                    new Vector3(room.x + 4f, floorY + 1.1f, room.z), new Vector3(room.x, floorY + 1.1f, room.z - 4f))
+                    new Vector3(room.x + 4f, floorY + 1.1f, room.z), new Vector3(room.x, floorY + 1.1f, room.z - 4f),
+                    tier: 2)
             };
+        }
+
+        // الغابة المظلمة (شمال غرب): ثلاثة «حرّاس الظلّ» من المستوى 4 —
+        // أجسام أضخم وأغمق، صحة ×4 وضرر ×2.2 وإعلان أقصر. لا تُدخل هنا بلا عتاد.
+        public static readonly Vector3 DarkForestCenter = new Vector3(-90f, 0f, 120f);
+
+        private EnemyAvatar[] BuildForestElites()
+        {
+            var tint = new Color(0.12f, 0.1f, 0.14f);
+            var c = DarkForestCenter;
+            var elites = new[]
+            {
+                BuildEnemy(WorldBuilder.OnGround(c.x, c.z, 1.4f),
+                    WorldBuilder.OnGround(c.x - 6f, c.z - 4f, 1.4f), WorldBuilder.OnGround(c.x + 6f, c.z + 4f, 1.4f),
+                    tintOverride: tint, tier: 4, nameOverride: "ShadeWarden"),
+                BuildEnemy(WorldBuilder.OnGround(c.x - 14f, c.z + 10f, 1.4f),
+                    WorldBuilder.OnGround(c.x - 18f, c.z + 6f, 1.4f), WorldBuilder.OnGround(c.x - 10f, c.z + 14f, 1.4f),
+                    tintOverride: tint, tier: 4, nameOverride: "ShadeWarden"),
+                BuildEnemy(WorldBuilder.OnGround(c.x + 12f, c.z - 12f, 1.4f),
+                    WorldBuilder.OnGround(c.x + 8f, c.z - 16f, 1.4f), WorldBuilder.OnGround(c.x + 16f, c.z - 8f, 1.4f),
+                    tintOverride: tint, tier: 4, nameOverride: "ShadeWarden")
+            };
+            foreach (var elite in elites)
+                elite.transform.localScale = Vector3.one * 1.3f; // أطول من اللاعب بوضوح
+            return elites;
         }
 
         private void BuildSoulsCache()
@@ -646,14 +677,16 @@ namespace SoulsGame.Core
 
         private EnemyAvatar BuildEnemy(Vector3 position, Vector3 patrolA, Vector3 patrolB,
             CharacterStats statsOverride = null, WeaponData weaponOverride = null,
-            Color? tintOverride = null)
+            Color? tintOverride = null, int tier = EnemyLevels.MinTier, string nameOverride = null)
         {
-            var stats = statsOverride != null ? statsOverride : enemyStats;
-            var weaponData = weaponOverride != null ? weaponOverride : enemyWeapon;
+            // مستوى المنطقة يضخّم نسخة من الأصل — المستوى 1 يبقي الأصل نفسه
+            var stats = EnemyLevels.Scale(statsOverride != null ? statsOverride : enemyStats, tier);
+            var weaponData = EnemyLevels.Scale(weaponOverride != null ? weaponOverride : enemyWeapon, tier);
             Color tint = tintOverride ?? new Color(0.6f, 0.2f, 0.2f);
 
             var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            go.name = statsOverride != null ? "DrownedChanter" : "EnemyMelee";
+            go.name = nameOverride ?? (statsOverride != null ? "DrownedChanter" : "EnemyMelee");
+            if (tier > EnemyLevels.MinTier) go.name += $"_L{tier}";
             go.transform.position = position;
             Tint(go, tint);
 
@@ -700,6 +733,7 @@ namespace SoulsGame.Core
             enemy.patrolA = patrolA;
             enemy.patrolB = patrolB;
             enemy.baseTint = tint;
+            enemy.tier = EnemyLevels.Clamp(tier);
 
             go.SetActive(true);
             enemy.Damageable.Died += () => Player.Wallet.Add(stats.soulsReward);
