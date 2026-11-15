@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2197564858bdb604587776dab8b88802, type: 3}
+  m_Name: ArtLibrary
+  m_EditorClassIdentifier: SoulsGame.Visuals::SoulsGame.Visuals.ArtLibrary
+  deadTrees: []
+  forestTrees:
+  - {fileID: 919132149155446097, guid: fcb15b707dce0b44587e9af67f8435eb, type: 3}
+  fallenLogs:
+  - {fileID: 919132149155446097, guid: f5fadcc1e4a62a040bfb170c43ddbbdb, type: 3}
+  - {fileID: 919132149155446097, guid: 6226a70db3315c14ca16dc35c4c2ab83, type: 3}
+  rocks:
+  - {fileID: 919132149155446097, guid: 937e77eb34498714fb4059240cffdcfd, type: 3}
+  - {fileID: 919132149155446097, guid: 83fcdb3588b81b1498115893526d1958, type: 3}
+  undergrowth:
+  - {fileID: 919132149155446097, guid: a8bde02255d23b14aa9fd45264585830, type: 3}
+  - {fileID: 919132149155446097, guid: f24e78ca71953404d8c70bcb45f620d8, type: 3}
+  firePit: {fileID: 919132149155446097, guid: 284bf658dc8cd454f9dc7559135244bb, type: 3}
+  fortRuin: {fileID: 919132149155446097, guid: adb3b3c5d56e5b84ebe6a2a3dc791c57, type: 3}
+  castleDoor: {fileID: 919132149155446097, guid: 06d5737c15873e745ace4d58c1d95eb0, type: 3}
+  ironGate: {fileID: 919132149155446097, guid: 41e53aa75fadcc747bdee5e150e82ce9, type: 3}
+  ground: {fileID: 2100000, guid: 6c864ced69f191546a64777d13d13c00, type: 2}
+  forestFloor: {fileID: 2100000, guid: 7de16bad4ca9647419aac991e56befd4, type: 2}
+  stone: {fileID: 2100000, guid: f415aa987b8ccf1488d1eb765a493acd, type: 2}
+  rockFace: {fileID: 2100000, guid: 484e5117cf4f50049bb436a6fc6af810, type: 2}
+  skybox: {fileID: 2100000, guid: 97fabee618548e7438d38774edae96dd, type: 2}

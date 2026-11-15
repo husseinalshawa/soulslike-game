@@ -22,6 +22,7 @@ namespace SoulsGame.Visuals
 
         private void Start()
         {
+            WorldDresser.Dress(ArtLibrary.Load()); // فن حقيقي فوق الأشكال البدائية (إن وُجد الكتالوج)
             BuildVolume();
             EnablePostOnCamera();
             LightCampfires();
@@ -66,7 +67,8 @@ namespace SoulsGame.Visuals
             var data = camera.GetUniversalAdditionalCameraData();
             data.renderPostProcessing = true;
             data.antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
-            camera.farClipPlane = Mathf.Max(camera.farClipPlane, 600f);
+            // الضباب يبتلع كل شيء بعد ~150م — لا داعي لرسم ما لا يُرى
+            camera.farClipPlane = 220f;
         }
 
         // كل نار مخيم تصير مصدر ضوء برتقالي يرتعش — منارات في الظلام
